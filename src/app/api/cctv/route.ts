@@ -79,11 +79,47 @@ async function fetchCaltransCameras(): Promise<any[]> {
   return allCams;
 }
 
-// ── CANADA: Ottawa, Toronto, Montreal ──
+// ── CANADA: Ottawa, Toronto, Montreal, Quebec ──
 async function fetchCanadaCameras(): Promise<any[]> {
   const cams: any[] = [];
 
-  // Ottawa MTO Highway Cameras
+  // Ottawa Municipal Cameras (Comprehensive)
+  try {
+    const res = await stealthFetch('https://traffic.ottawa.ca/beta/camera_list', { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const data = await res.json();
+      for (const cam of (data || [])) {
+        if (!cam.latitude || !cam.longitude) continue;
+        cams.push({
+          id: `ottawa-muni-${cam.id}`, lat: cam.latitude, lng: cam.longitude,
+          name: cam.description || 'Ottawa Traffic Camera', city: 'Ottawa', country: 'Canada',
+          feed_url: `https://traffic.ottawa.ca/map/camera?id=${cam.id}`, source: 'City of Ottawa',
+        });
+      }
+    }
+  } catch { /* silent */ }
+
+  // Quebec 511 (Comprehensive - covers Montreal, Quebec City, highways)
+  try {
+    const res = await stealthFetch('https://ws.mapserver.transports.gouv.qc.ca/swtq?service=wfs&version=2.0.0&request=getfeature&typename=ms:infos_cameras&outfile=Camera&srsname=EPSG:4326&outputformat=geojson', { signal: AbortSignal.timeout(10000) });
+    if (res.ok) {
+      const data = await res.json();
+      for (const feature of (data.features || [])) {
+        const coords = feature.geometry?.coordinates;
+        const p = feature.properties;
+        if (!coords || !p || !p.IDEcamera) continue;
+        
+        cams.push({
+          id: `quebec511-${p.IDEcamera}`, lat: coords[1], lng: coords[0],
+          name: p.DescriptionLocalisationEn || p.DescriptionLocalisationFr || 'Quebec 511 Camera', city: p.NomRegionDiffusion || 'Quebec', country: 'Canada',
+          external_url: p.URL_FLUX_DONNEE || `https://www.quebec511.info/Carte/Fenetres/FenetreVideo.html?id=${p.IDEcamera}`,
+          source: 'Quebec 511',
+        });
+      }
+    }
+  } catch { /* silent */ }
+
+  // Ontario 511 (MTO Highway Cameras)
   try {
     const res = await stealthFetch('https://511on.ca/api/v2/get/cameras', { signal: AbortSignal.timeout(10000) });
     if (res.ok) {
@@ -99,14 +135,14 @@ async function fetchCanadaCameras(): Promise<any[]> {
     }
   } catch { /* silent */ }
 
-  // Ville de Montréal cameras
+  // Ville de Montréal municipal cameras
   try {
     const res = await stealthFetch('https://ville.montreal.qc.ca/circulation/sites/ville.montreal.qc.ca.circulation/files/cameras.json', { signal: AbortSignal.timeout(8000) });
     if (res.ok) {
       const data = await res.json();
       for (const cam of (data || [])) {
         cams.push({
-          id: `mtl-${cams.length}`, lat: cam.latitude || cam.lat, lng: cam.longitude || cam.lng,
+          id: `mtl-muni-${cams.length}`, lat: cam.latitude || cam.lat, lng: cam.longitude || cam.lng,
           name: cam.description || cam.name || 'Montréal Camera', city: 'Montréal', country: 'Canada',
           feed_url: cam.url || cam.imageUrl || '', source: 'Ville MTL',
         });
@@ -114,16 +150,8 @@ async function fetchCanadaCameras(): Promise<any[]> {
     }
   } catch { /* silent */ }
 
-  // Curated Ottawa/Toronto cameras from known public feeds
+  // Curated Toronto cameras (fallback if 511ON fails)
   const curated = [
-    { id: 'ott-1', lat: 45.4215, lng: -75.6972, name: 'Parliament Hill / Wellington', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=1', source: 'Ottawa' },
-    { id: 'ott-2', lat: 45.4231, lng: -75.6831, name: 'Rideau / Sussex', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=2', source: 'Ottawa' },
-    { id: 'ott-3', lat: 45.4195, lng: -75.7009, name: 'Bank / Sparks', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=3', source: 'Ottawa' },
-    { id: 'ott-4', lat: 45.4249, lng: -75.6950, name: 'King Edward / Rideau', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=4', source: 'Ottawa' },
-    { id: 'ott-5', lat: 45.3968, lng: -75.7398, name: 'Merivale / Baseline', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=5', source: 'Ottawa' },
-    { id: 'ott-6', lat: 45.3484, lng: -75.7580, name: 'Fallowfield / Woodroffe', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=6', source: 'Ottawa' },
-    { id: 'ott-7', lat: 45.4012, lng: -75.6518, name: 'Hwy 417 / Vanier Pkwy', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=7', source: 'Ottawa' },
-    { id: 'ott-8', lat: 45.4475, lng: -75.4822, name: 'Innes / Orleans Blvd', city: 'Ottawa', country: 'Canada', feed_url: 'https://traffic.ottawa.ca/map/camera?id=8', source: 'Ottawa' },
     { id: 'tor-1', lat: 43.6532, lng: -79.3832, name: 'Yonge / Dundas Square', city: 'Toronto', country: 'Canada', feed_url: 'https://511on.ca/api/v2/get/cameras', source: '511 Ontario' },
     { id: 'tor-2', lat: 43.6426, lng: -79.3871, name: 'CN Tower / Lakeshore', city: 'Toronto', country: 'Canada', feed_url: 'https://511on.ca/api/v2/get/cameras', source: '511 Ontario' },
     { id: 'tor-3', lat: 43.6711, lng: -79.3868, name: 'Bloor / Yonge', city: 'Toronto', country: 'Canada', feed_url: 'https://511on.ca/api/v2/get/cameras', source: '511 Ontario' },
