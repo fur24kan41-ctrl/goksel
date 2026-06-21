@@ -56,7 +56,7 @@ const AIRLINE_CODE_RE = /^([A-Z]{3})\d/;
 
 async function fetchRegion(region: typeof REGIONS[0]): Promise<any[]> {
   try {
-    const url = `https://api.airplanes.live/v2/point/${region.lat}/${region.lon}/${region.dist}`;
+    const url = `https://api.adsb.lol/v2/point/${region.lat}/${region.lon}/${region.dist}`;
     const res = await stealthFetch(url, {
       signal: AbortSignal.timeout(12000),
     });
