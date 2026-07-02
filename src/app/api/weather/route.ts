@@ -3,8 +3,10 @@ import { stealthFetch } from '@/lib/stealthFetch';
 
 /**
  * OSIRIS — Severe Weather & Anomalies API
- * Fetches active natural events from NASA EONET and NOAA/NWS active alerts.
- * Tracks: Severe storms, volcanoes, sea ice, and U.S. active weather alerts.
+ * Fetches active natural events from NASA EONET (global storms/volcanoes/sea ice),
+ * NOAA/NWS active alerts (U.S. only), and GDACS (global cyclones/floods/droughts).
+ * NWS alone only covers the U.S.; GDACS fills the rest of the world with the same
+ * severity/coordinate shape so the map layer shows weather events everywhere.
  */
 
 type Severity = 'low' | 'medium' | 'high';
@@ -22,7 +24,7 @@ type WeatherEvent = {
   expires?: string;
   area?: string;
   source: string;
-  provider: 'NASA EONET' | 'NOAA/NWS';
+  provider: 'NASA EONET' | 'NOAA/NWS' | 'GDACS';
 };
 
 type EonetEvent = {
@@ -79,9 +81,71 @@ type NwsResponse = {
   features?: NwsFeature[];
 };
 
+// GDACS event types we surface here. EQ (earthquakes) and WF (wildfires) are already
+// covered by the dedicated /api/earthquakes (USGS) and /api/fires (FIRMS) routes.
+const GDACS_TYPE_MAP: Record<string, { type: string; icon: string }> = {
+  TC: { type: 'Tropical Cyclone', icon: 'cyclone' },
+  FL: { type: 'Flood', icon: 'flood' },
+  DR: { type: 'Drought', icon: 'drought' },
+};
+
+function getGdacsTag(itemXml: string, tag: string): string {
+  const m = itemXml.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'));
+  return (m?.[1] || '').trim();
+}
+
+function normalizeGdacsSeverity(alertLevel: string): Severity {
+  switch (alertLevel.toLowerCase()) {
+    case 'red': return 'high';
+    case 'orange': return 'medium';
+    default: return 'low';
+  }
+}
+
+function parseGdacsRss(xml: string): WeatherEvent[] {
+  const events: WeatherEvent[] = [];
+  const itemRegex = /<item>([\s\S]*?)<\/item>/gi;
+  let match;
+
+  while ((match = itemRegex.exec(xml)) !== null) {
+    const itemXml = match[1];
+    const eventType = getGdacsTag(itemXml, 'gdacs:eventtype');
+    const mapped = GDACS_TYPE_MAP[eventType];
+    if (!mapped) continue;
+
+    const latMatch = itemXml.match(/<geo:lat>([-\d.]+)<\/geo:lat>/i);
+    const lonMatch = itemXml.match(/<geo:long>([-\d.]+)<\/geo:long>/i);
+    if (!latMatch || !lonMatch) continue;
+
+    const eventId = getGdacsTag(itemXml, 'gdacs:eventid');
+    const episodeId = getGdacsTag(itemXml, 'gdacs:episodeid');
+    const title = getGdacsTag(itemXml, 'title').replace(/&amp;/g, '&').replace(/&gt;/g, '>').replace(/&lt;/g, '<');
+    const country = getGdacsTag(itemXml, 'gdacs:country');
+    const alertLevel = getGdacsTag(itemXml, 'gdacs:alertlevel');
+    const link = getGdacsTag(itemXml, 'link').replace(/&amp;/g, '&');
+
+    events.push({
+      id: `gdacs-${eventType}-${eventId}-${episodeId}`,
+      title,
+      category: 'gdacs',
+      type: mapped.type,
+      icon: mapped.icon,
+      severity: normalizeGdacsSeverity(alertLevel),
+      lat: parseFloat(latMatch[1]),
+      lng: parseFloat(lonMatch[1]),
+      date: getGdacsTag(itemXml, 'pubDate'),
+      area: country || undefined,
+      source: link || 'https://www.gdacs.org/',
+      provider: 'GDACS',
+    });
+  }
+
+  return events;
+}
+
 export async function GET() {
   try {
-    const [eonetRes, nwsRes] = await Promise.allSettled([
+    const [eonetRes, nwsRes, gdacsRes] = await Promise.allSettled([
       stealthFetch('https://eonet.gsfc.nasa.gov/api/v3/events?status=open&limit=100', {
         signal: AbortSignal.timeout(10000),
       }),
@@ -90,6 +154,9 @@ export async function GET() {
           Accept: 'application/geo+json',
           'User-Agent': 'OSIRIS Severe Weather Layer',
         },
+        signal: AbortSignal.timeout(10000),
+      }),
+      stealthFetch('https://www.gdacs.org/xml/rss.xml', {
         signal: AbortSignal.timeout(10000),
       }),
     ]);
@@ -180,6 +247,16 @@ export async function GET() {
         }
       } catch (error) {
         console.error('NOAA/NWS normalization error:', error);
+      }
+    }
+
+    if (gdacsRes.status === 'fulfilled' && gdacsRes.value.ok) {
+      try {
+        const xml = await gdacsRes.value.text();
+        events.push(...parseGdacsRss(xml));
+        providerSucceeded = true;
+      } catch (error) {
+        console.error('GDACS normalization error:', error);
       }
     }
 

@@ -7,6 +7,7 @@ import {
   TrendingUp, TrendingDown, ChevronDown, ChevronUp, BarChart3,
   Zap, Shield, Droplets, Gem, Bitcoin, LineChart, Maximize2, Minimize2
 } from 'lucide-react';
+import AiOverview from './AiOverview';
 
 interface MarketsPanelProps { data: any; spaceWeather?: any; }
 
@@ -85,6 +86,11 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
                 )}
               </div>
             )}
+
+            {/* One-click AI overview of the current market picture */}
+            <div className="mb-2">
+              <AiOverview mode="markets" payload={{ markets, spaceWeather }} accent="#D4AF37" />
+            </div>
 
             {/* Section Tabs — icons instead of emojis */}
             <div className="flex gap-0.5 mb-2 overflow-x-auto">
