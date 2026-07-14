@@ -3,8 +3,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, TrendingUp } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 export default function TokenPanel() {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
 
   return (
@@ -14,7 +16,7 @@ export default function TokenPanel() {
         className="pointer-events-auto glass-panel px-3 py-1.5 flex items-center gap-2 text-[8px] font-mono tracking-widest hover:opacity-80 transition-opacity border-[#14F195]/40 bg-[#14F195]/10 ml-3 shadow-[0_0_10px_rgba(20,241,149,0.1)]"
       >
         <TrendingUp className="w-3 h-3 text-[#14F195]" />
-        <span className="text-[#14F195] font-bold">$OSIRIS</span>
+        <span className="text-[#14F195] font-bold">$GÖKSEL</span>
       </button>
 
       <AnimatePresence>
@@ -39,7 +41,7 @@ export default function TokenPanel() {
               <div className="flex items-center justify-between px-4 py-3 border-b border-[var(--border-primary)] bg-black/40">
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-4 h-4 text-[#14F195]" />
-                  <h2 className="text-xs font-mono font-bold text-white tracking-widest uppercase">$OSIRIS LIVE CHART</h2>
+                  <h2 className="text-xs font-mono font-bold text-white tracking-widest uppercase">{t('$GÖKSEL LIVE CHART')}</h2>
                 </div>
                 <button 
                   onClick={() => setIsOpen(false)}

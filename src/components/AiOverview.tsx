@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, Loader2, RefreshCw, X } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * OSIRIS — One-Click AI Overview
@@ -26,6 +27,7 @@ interface OverviewResult {
 }
 
 export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOverviewProps) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<OverviewResult | null>(null);
@@ -67,7 +69,7 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
         }}
       >
         {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
-        {loading ? 'ANALYZING…' : 'AI OVERVIEW'}
+        {loading ? t('ANALYZING...') : t('AI OVERVIEW')}
       </button>
 
       <AnimatePresence>
@@ -86,13 +88,13 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
               {/* Header row */}
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-mono tracking-widest text-[8px]" style={{ color: accent }}>
-                  {result ? `OSIRIS ${result.generatedBy === 'gemini' ? 'AI' : 'ANALYST'}` : 'OSIRIS ANALYST'}
+                  {result ? (result.generatedBy === 'gemini' ? t('GÖKSEL AI') : t('GÖKSEL ANALYST')) : t('GÖKSEL ANALYST')}
                 </span>
                 <div className="flex items-center gap-2">
-                  <button onClick={generate} disabled={loading} className="hover:opacity-70 transition-opacity" title="Regenerate">
+                  <button onClick={generate} disabled={loading} className="hover:opacity-70 transition-opacity" title={t('Regenerate')}>
                     <RefreshCw className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} style={{ color: accent }} />
                   </button>
-                  <button onClick={() => setOpen(false)} className="hover:opacity-70 transition-opacity" title="Close">
+                  <button onClick={() => setOpen(false)} className="hover:opacity-70 transition-opacity" title={t('Close')}>
                     <X className="w-3 h-3 text-[var(--text-muted)]" />
                   </button>
                 </div>
@@ -100,7 +102,7 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
 
               {loading && !result && (
                 <div className="flex items-center gap-2 py-2 text-[var(--text-muted)]">
-                  <Loader2 className="w-3 h-3 animate-spin" /> Reading the feed…
+                  <Loader2 className="w-3 h-3 animate-spin" /> {t('Reading the feed...')}
                 </div>
               )}
 
@@ -125,7 +127,7 @@ export default function AiOverview({ mode, payload, accent = '#7C4DFF' }: AiOver
                   )}
 
                   <div className="mt-2 text-[7px] font-mono text-[var(--text-muted)] tracking-wide">
-                    {result.generatedBy === 'gemini' ? 'GEMINI 2.0 FLASH' : 'HEURISTIC ANALYST'} ·{' '}
+                    {result.generatedBy === 'gemini' ? 'GEMINI 2.0 FLASH' : t('HEURISTIC ANALYST')} ·{' '}
                     {new Date(result.generatedAt).toLocaleTimeString()}
                   </div>
                 </>

@@ -1,0 +1,488 @@
+'use client';
+
+import React, { createContext, useContext, useState, useCallback } from 'react';
+
+type Language = 'en' | 'tr';
+
+type TranslationDict = Record<string, string>;
+
+const TR: Record<string, string> = {
+  // ===== SPLASH SCREEN =====
+  'ESTABLISHING SECURE CONNECTION...': 'GÜVENLİ BAĞLANTI KURULUYOR...',
+  'INITIALIZING FEEDS...': 'YAYINLAR BAŞLATILIYOR...',
+  'CALIBRATING SENSORS...': 'SENSÖRLER KALİBRE EDİLİYOR...',
+  'SYSTEM READY': 'SİSTEM HAZIR',
+  'GLOBAL INTELLIGENCE PLATFORM': 'KÜRESEL İSTİHBARAT PLATFORMU',
+  'V4.2': 'V4.2',
+
+  // ===== HEADER =====
+  'GLOBAL INTELLIGENCE COMMAND': 'KÜRESEL İSTİHBARAT KOMUTANLIĞI',
+  'POWERED BY GÖKSEL OPEN SOURCE INTELLIGENCE': 'GÖKSEL AÇIK KAYNAK İSTİHBARATI İLE DESTEKLENMEKTEDİR',
+  'C2 ENGINE: PHYSICAL COMMAND CORE': 'C2 MOTORU: FİZİKSEL KOMUTANLIK ÇEKİRDEĞİ',
+  'SENSORS: ORBITAL LATTICE': 'SENSÖRLER: YÖRÜNGE AĞI',
+  'NET: LYCAN NETWORK': 'AĞ: LYCAN AĞI',
+
+  // ===== STATUS BAR =====
+  UPTIME: 'ÇALIŞMA SÜRESİ',
+  ZULU: 'ZULU',
+  SYS: 'SİS',
+  SOLAR: 'GÜNEŞ',
+  FEEDS: 'YAYIN',
+  'SUPPORT PROJECT': 'PROJEYİ DESTEKLE',
+  'V.4.1': 'V.4.1',
+
+  // ===== MAP CONTROLS =====
+  '3D Globe': '3D Küre',
+  '2D Map': '2D Harita',
+  'Night Mode': 'Gece Modu',
+  'Satellite View': 'Uydu Görünümü',
+  '3D': '3D',
+  '2D': '2D',
+  MAP: 'HARİTA',
+  SAT: 'UYDU',
+
+  // ===== COORD STRIP =====
+  COORD: 'KOORD',
+  LOC: 'KON',
+  'HOVER MAP': 'HARİTA ÜZERİ GEZİN',
+  Z: 'Y',
+
+  // ===== SHORTCUT HINT =====
+  'SHORTCUTS': 'KISAYOLLAR',
+  'FULLSCREEN': 'TAM EKRAN',
+  'SHARE': 'PAYLAŞ',
+  'RESET VIEW': 'GÖRÜNÜMÜ SIFIRLA',
+
+  // ===== REGION DOSSIER =====
+  'REGION DOSSIER': 'BÖLGE DOSYASI',
+  'COMPILING INTEL...': 'İSTİHBARAT DERLENİYOR...',
+  LOCATION: 'KONUM',
+  COUNTRY: 'ÜLKE',
+  CAPITAL: 'BAŞKENT',
+  POPULATION: 'NÜFUS',
+  REGION: 'BÖLGE',
+  LANGUAGES: 'DİLLER',
+  AREA: 'YÜZÖLÇÜMÜ',
+  'HEAD OF STATE': 'DEVLET BAŞKANI',
+  'INTELLIGENCE BRIEF': 'İSTİHBARAT RAPORU',
+
+  // ===== LIVE FEED VIEWER =====
+  'LIVE STREAM': 'CANLI YAYIN',
+  'EXTERNAL ONLY': 'SADECE HARİCİ',
+  'Open in YouTube': 'YouTube\'da Aç',
+  'EMBED RESTRICTED': 'GÖMME KISITLI',
+  'does not allow third-party embedding. Click below to open the live stream directly.':
+    'üçüncü taraf gömmeye izin vermiyor. Canlı yayını doğrudan açmak için aşağıya tıklayın.',
+  'OPEN LIVE STREAM': 'CANLI YAYINI AÇ',
+  'If you see "Video unavailable", use': 'Eğer "Video kullanılamıyor" görürseniz,',
+  'above.': 'yukarıdakini kullanın.',
+
+  // ===== MOBILE NAV =====
+  LAYERS: 'KATMANLAR',
+  MARKETS: 'PİYASALAR',
+  INTEL: 'İSTİHBARAT',
+  RECON: 'KEŞİF',
+  SEARCH: 'ARA',
+  'LAYERS & STATS': 'KATMANLAR ve İSTATİSTİKLER',
+  'MARKETS & INTEL': 'PİYASALAR ve İSTİHBARAT',
+  'INTEL FEED': 'İSTİHBARAT AKIŞI',
+  'GÖKSEL RECON': 'GÖKSEL KEŞİF',
+  AIR: 'HVA',
+  CAM: 'KAM',
+  WX: 'HAV',
+  NUC: 'NÜK',
+
+  // ===== LAYER PANEL =====
+  'GÖKSEL SDK': 'GÖKSEL SDK',
+  'Maritime Lines': 'Deniz Hatları',
+  AVIATION: 'HAVACILIK',
+  Commercial: 'Ticari',
+  Private: 'Özel',
+  'Private Jets': 'Özel Jetler',
+  Military: 'Askeri',
+  MARITIME: 'DENİZCİLİK',
+  'Maritime / Naval': 'Deniz / Donanma',
+  SPACE: 'UZAY',
+  'SPACE TRACKING': 'UZAY TAKİBİ',
+  'All Satellites': 'Tüm Uydular',
+  'Starlink / Comms': 'Starlink / Haberleşme',
+  'Military / Intel': 'Askeri / İstihbarat',
+  'GPS / Navigation': 'GPS / Navigasyon',
+  'Earth Observation': 'Dünya Gözlemi',
+  'Stations / Telescopes': 'İstasyonlar / Teleskoplar',
+  SURVEIL: 'GÖZETİM',
+  SURVEILLANCE: 'GÖZETİM',
+  'CCTV Cameras': 'CCTV Kameralar',
+  'Live News Feeds': 'Canlı Haber Akışları',
+  'SIGINT News': 'SİNYAL İSTİHBARAT HABERLERİ',
+  HAZARD: 'TEHLİKE',
+  'NATURAL HAZARDS': 'DOĞAL AFETLER',
+  Earthquakes: 'Depremler',
+  'Active Fires': 'Aktif Yangınlar',
+  'Severe Weather': 'Şiddetli Hava',
+  THREAT: 'TEHDİT',
+  'THREATS & INTEL': 'TEHDİTLER ve İSTİHBARAT',
+  'Nuclear Facilities': 'Nükleer Tesisler',
+  'Global Incidents': 'Küresel Olaylar',
+  'GPS Jamming': 'GPS Karıştırma',
+  NETWORK: 'AĞ',
+  'NETWORK INTEL': 'AĞ İSTİHBARATI',
+  'Live Malware': 'Canlı Kötü Amaçlı Yazılım',
+  'Live Attacks': 'Canlı Saldırılar',
+  DISPLAY: 'GÖRÜNTÜ',
+  'Day / Night Cycle': 'Gündüz / Gece Döngüsü',
+  '3D Terrain & Buildings': '3D Arazi ve Binalar',
+  'Ghost Protocol': 'Hayalet Protokolü',
+
+  // ===== OSINT PANEL =====
+  'RECON TOOLKIT': 'KEŞİF ARACI',
+  TOOLS: 'ARAÇLAR',
+  'GLOBAL SWEEP': 'KÜRESEL TARAMA',
+  'SELF TRACK': 'KENDİNİ İZLE',
+  TRACKING: 'İZLENİYOR',
+  SCAN: 'TARA',
+  'PORT SCAN': 'PORT TARAMA',
+  'IP or hostname': 'IP veya hostname',
+  'VULN SWEEP': 'ZAFİYET TARAMASI',
+  DNS: 'DNS',
+  'Domain name': 'Alan adı',
+  WHOIS: 'WHOIS',
+  CERTS: 'SERTİFİKALAR',
+  THREATS: 'TEHDİTLER',
+  'IP, domain, or hash': 'IP, alan adı veya hash',
+  HEADERS: 'BAŞLIKLAR',
+  'URL to inspect': 'İncelenecek URL',
+  'SSL/TLS': 'SSL/TLS',
+  SUBDOMAINS: 'ALT ALANLAR',
+  'Domain to enumerate': 'Numaralandırılacak alan adı',
+  'TECH DETECT': 'TEKNOLOJİ TESPİTİ',
+  'URL to fingerprint': 'Parmak izi alınacak URL',
+  'SHODAN IOT': 'SHODAN IOT',
+  'IP address': 'IP adresi',
+  'BGP ROUTE': 'BGP ROTASI',
+  'IP or ASN': 'IP veya ASN',
+  'MAC ADDR': 'MAC ADRESİ',
+  'MAC address': 'MAC adresi',
+  'PHONE INTEL': 'TELEFON İSTİHBARATI',
+  'Phone number (e.g. +1...)': 'Telefon numarası (örn: +90...)',
+  'DATA LEAKS': 'VERİ SIZINTILARI',
+  'Email address': 'E-posta adresi',
+  'GITHUB RECON': 'GITHUB KEŞİF',
+  'GitHub username': 'GitHub kullanıcı adı',
+  'IP SWEEP': 'IP TARAMASI',
+  'Enter IP address (e.g. 8.8.8.8)': 'IP adresi girin (örn: 8.8.8.8)',
+  'QUICK SCAN': 'HIZLI TARAMA',
+  'DEEP SCAN': 'DERİN TARAMA',
+  'TOP 1000 PORTS': 'EN İYİ 1000 PORT',
+  'SUBNET MASK:': 'ALT AĞ MASKESİ:',
+  'SWEEPING SUBNET...': 'ALT AĞ TARANIYOR...',
+  hosts: 'cihaz',
+  'DEVICES FOUND': 'CİHAZ BULUNDU',
+  'SWEPT': 'TARANDI',
+  HOSTS: 'CİHAZ',
+  'RECENT SCANS': 'SON TARAMALAR',
+  RESULTS: 'SONUÇLAR',
+  'GÖKSEL RECON TOOLKIT': 'GÖKSEL KEŞİF ARAÇ KİTİ',
+  'EXPANDED VIEW': 'GENİŞLETİLMİŞ GÖRÜNÜM',
+  MODULES: 'MODÜLLER',
+  'HOST INFO': 'SUNUCU BİLGİSİ',
+  Target: 'Hedef',
+  'Scan Type': 'Tarama Türü',
+  Duration: 'Süre',
+  'OPEN PORTS': 'AÇIK PORTLAR',
+  'VULNERABILITY ASSESSMENT': 'ZAFİYET DEĞERLENDİRMESİ',
+  'Total CVEs': 'Toplam CVE',
+  'Risk Level': 'Risk Seviyesi',
+  'POSSIBLE EXPLOITS': 'OLASI SİTİSMALAR',
+  'DNS RECORDS': 'DNS KAYITLARI',
+  'WHOIS INTELLIGENCE': 'WHOIS İSTİHBARATI',
+  'SHODAN IOT INTELLIGENCE': 'SHODAN IOT İSTİHBARATI',
+  'BGP ROUTING INTELLIGENCE': 'BGP ROTA İSTİHBARATI',
+  'MAC VENDOR LOOKUP': 'MAC ÜRETİCİ SORGULAMA',
+  'DATA LEAK SWEEP': 'VERİ SIZINTISI TARAMASI',
+  'CERTIFICATE TRANSPARENCY': 'SERTİFİKA ŞEFFAFLIĞI',
+  'THREAT INTELLIGENCE': 'TEHDİT İSTİHBARATI',
+  'SSL/TLS ANALYSIS': 'SSL/TLS ANALİZİ',
+  'PHONE INTELLIGENCE': 'TELEFON İSTİHBARATI',
+  'RECENT REPOS': 'SON DEPOLAR',
+  'EXPOSED DATA POINTS': 'AÇIĞA ÇIKAN VERİLER',
+  'KNOWN BREACHES': 'BİLİNEN İHLALLER',
+  'Identified Vulnerabilities': 'TESPİT EDİLEN ZAFİYETLER',
+  'Open Ports': 'Açık Portlar',
+  Hostnames: 'Hostname\'ler',
+  Vulnerabilities: 'Zafiyetler',
+  'No reverse DNS': 'Ters DNS yok',
+  'Fetching vulnerability intelligence...': 'Zafiyet istihbaratı getiriliyor...',
+  'VULN': 'ZAFİYET',
+  'SANCTIONED': 'YAPTIRIMLI',
+  'VISUALIZE ON GLOBE': 'KÜREDE GÖRSELLEŞTİR',
+  'AWAITING INTELLIGENCE...': 'İSTİHBARAT BEKLENİYOR...',
+  'OPEN SOURCE': 'AÇIK KAYNAK',
+  'Unknown': 'Bilinmiyor',
+
+  // ===== MAP POPUPS =====
+  MODEL: 'MODEL',
+  ALT: 'İRT',
+  SPEED: 'HIZ',
+  HDG: 'YKN',
+  REG: 'KAYIT',
+  POS: 'KONUM',
+  FLIGHTAWARE: 'FLIGHTAWARE',
+  'ADS-B': 'ADS-B',
+  RADARBOX: 'RADARBOX',
+  '[ DEEP DIVE INTEL ]': '[ DERİN DALIŞ İSTİHBARATI ]',
+  MISSION: 'GÖREV',
+  'TRACK ON N2YO': 'N2YO\'DA TAKİP ET',
+  'ACTIVE FIRE DETECTED': 'AKTİF YANGIN TESPİT EDİLDİ',
+  BRIGHTNESS: 'PARLAKLIK',
+  'NASA FIRMS MAP': 'NASA FIRMS HARİTASI',
+  'Unidentified Threat Payload': 'Tanımlanamayan Tehdit Yükü',
+  'THREAT INTEL': 'TEHDİT İSTİHBARATI',
+  'DEEP DIVE ANALYTICS': 'DERİN DALIŞ ANALİTİĞİ',
+  'CONFLICT EVENT': 'ÇATIŞMA OLAYI',
+  'Unclassified incident': 'Sınıflandırılmamış Olay',
+  '[ OPEN SOURCE ]': '[ AÇIK KAYNAK ]',
+  '[ IP INTEL DEEP DIVE ]': '[ IP İSTİHBARAT DERİN DALIŞ ]',
+  'ACTIVE THREATS': 'AKTİF TEHDİTLER',
+  ALTITUDE: 'YÜKSEKLİK',
+  TEMP: 'SICAKLIK',
+  FLAG: 'BAYRAK',
+  HEADING: 'YÖN',
+  DESTINATION: 'VARİS NOKTASI',
+  'Network error': 'Ağ hatası',
+  'Could not retrieve your IP location.': 'IP konumunuz alınamadı.',
+  'Lookup failed': 'Sorgulama başarısız',
+  MISSING: 'BULUNAMADI',
+  COMPROMISED: 'ELE GEÇİRİLMİŞ',
+  SECURE: 'GÜVENLİ',
+  'YES': 'EVET',
+  'NO': 'HAYIR',
+  'A Records': 'A Kayıtları',
+  AAAA: 'AAAA',
+  MX: 'MX',
+  NS: 'NS',
+  TXT: 'TXT',
+  CNAME: 'CNAME',
+  SOA: 'SOA',
+  AWAITING: 'BEKLENİYOR',
+  INTELLIGENCE: 'İSTİHBARAT',
+  Domain: 'Alan Adı',
+  Registrar: 'Kayıt Şirketi',
+  Created: 'Oluşturulma',
+  Expires: 'Bitiş',
+  Updated: 'Güncellenme',
+  Status: 'Durum',
+  Nameservers: 'İsim Sunucuları',
+  'MAC Address': 'MAC Adresi',
+  Vendor: 'Üretici',
+  'Not Found': 'Bulunamadı',
+  Valid: 'Geçerli',
+  'Query': 'Sorgu',
+  'E.164 Format': 'E.164 Formatı',
+  'Intl Format': 'Uluslararası Format',
+  'Nat Format': 'Ulusal Format',
+  'Line Type': 'Hat Türü',
+  Company: 'Şirket',
+  Location: 'Konum',
+  Email: 'E-posta',
+  Twitter: 'Twitter',
+  Website: 'Web Sitesi',
+  Bio: 'Biyografi',
+  'Risk Score': 'Risk Puanı',
+  Malicious: 'Kötü Amaçlı',
+  Category: 'Kategori',
+  Reports: 'Raporlar',
+  'Last Seen': 'Son Görülme',
+  Tags: 'Etiketler',
+  Protocol: 'Protokol',
+  Cipher: 'Şifre',
+  Issuer: 'Düzenleyen',
+  Subject: 'Konu',
+  'SANs': 'SAN\'lar',
+  'Certificates': 'Sertifikalar',
+  'Common Name': 'Ortak Ad',
+  'Not Before': 'Başlangıç',
+  'Not After': 'Bitiş',
+  'Target IP': 'Hedef IP',
+  Source: 'Kaynak',
+  'Followers': 'Takipçi',
+  ASN: 'ASN',
+  Name: 'İsim',
+  Description: 'Açıklama',
+  Country: 'Ülke',
+  Prefix: 'Önek',
+  Peers: 'Eşler',
+  Prefixes: 'Önekler',
+  'SWEEPING': 'TARANIYOR',
+  // ===== MARKETS PANEL =====
+  LIVE: 'CANLI',
+  'SPACE WEATHER': 'UZAY HAVASI',
+  'Latest flare:': 'Son parlama:',
+  INDICES: 'ENDEKSLER',
+  DEFENSE: 'SAVUNMA',
+  ENERGY: 'ENERJİ',
+  COMMODITIES: 'EMTİA',
+  CRYPTO: 'KRİPTO',
+  'Loading': 'Yükleniyor',
+  Restore: 'Küçült',
+  Maximize: 'Büyüt',
+
+  // ===== ALERTS PANEL =====
+  'LIVE ALERTS': 'CANLI UYARILAR',
+  'No alerts for this filter': 'Bu filtre için uyarı yok',
+  all: 'TÜMÜ',
+  news: 'HABER',
+  quakes: 'DEPREM',
+  feeds: 'YAYIN',
+  ALL: 'TÜMÜ',
+  NEWS: 'HABER',
+  QUAKES: 'DEPREM',
+  SOURCE: 'KAYNAK',
+  CRITICAL: 'KRİTİK',
+  HIGH: 'YÜKSEK',
+  ELEVATED: 'YÜKSELTİLMİŞ',
+  MODERATE: 'ORTA',
+  LOW: 'DÜŞÜK',
+
+  // ===== SEARCH BAR =====
+  'CMD: LOCATE': 'KOMUT: BUL',
+  'SEARCH ADDRESS, CITY, OR COORDINATES...': 'ADRES, ŞEHİR VEYA KOORDİNAT ARA...',
+  COORDS: 'KOORD',
+
+  // ===== INTEL FEED =====
+  'SIGINT FEED': 'SİNYAL İSTİHBARAT AKIŞI',
+  ALERTS: 'UYARILAR',
+
+  // ===== ENTITY GRAPH =====
+  'GÖKSEL // ENTITY INTEL': 'GÖKSEL // VARLIK İSTİHBARATI',
+  NODES: 'DÜĞÜM',
+  LINKS: 'BAĞLANTI',
+  'AWAITING TARGET LOCK': 'HEDEF KİLİDİ BEKLENİYOR',
+  aircraft: 'uçak',
+  vessel: 'gemi',
+  company: 'şirket',
+  person: 'kişi',
+  country: 'ülke',
+  event: 'olay',
+  sanction: 'yaptırım',
+  ip: 'ip',
+  'No graph data yet': 'Henüz grafik verisi yok',
+  'ACQUIRE TARGET DATA': 'HEDEF VERİSİNİ AL',
+  ERR: 'HATA',
+
+  // ===== SCM PANEL =====
+  'SCM RISK COMMAND': 'TEDARİK ZİNCİRİ RİSK KOMUTANLIĞI',
+  'MARKET IMPACT ALERTS': 'PİYASA ETKİ UYARILARI',
+  'CRITICAL SUPPLIERS': 'KRİTİK TEDARİKÇİLER',
+  'All monitored Tier 1/2 nodes operational.': 'İzlenen tüm Seviye 1/2 düğümleri çalışıyor.',
+  'CONGESTED NODES': 'SIKIŞIK DÜĞÜMLER',
+  'Global maritime flow optimal.': 'Küresel deniz trafiği optimal.',
+  DWELL: 'BEKLEME',
+  'Raw': 'Ham',
+
+  // ===== CAMERA VIEWER =====
+  'SECURE UPLINK': 'GÜVENLİ BAĞLANTI',
+  'Refresh feed': 'Yayını yenile',
+  'Fly to location': 'Konuma uç',
+  'Toggle fullscreen': 'Tam ekranı aç/kapat',
+  'DECRYPTING FEED...': 'YAYIN ÇÖZÜLÜYOR...',
+  'SECURE FEED ENCRYPTED': 'GÜVENLİ YAYIN ŞİFRELİ',
+  'This feed requires external clearance': 'Bu yayın harici izin gerektirir',
+  'ACCESS TERMINAL': 'TERMİNALE ERİŞ',
+  'FEED UNAVAILABLE': 'YAYIN KULLANILAMIYOR',
+  'Camera may be offline or restricted': 'Kamera çevrimdışı veya kısıtlı olabilir',
+  RETRY: 'YENİ DENE',
+  'LIVE SAT-LINK': 'CANLI UYDU BAĞLANTISI',
+  'LIVE FEED': 'CANLI YAYIN',
+  'FEED TYPE': 'YAYIN TÜRÜ',
+  STATUS: 'DURUM',
+  'ACTIVE / RECORDING': 'AKTİF / KAYIT',
+  'RAW FEED': 'HAM YAYIN',
+  'MAP TARGET': 'HARİTA HEDEFİ',
+
+  // ===== ERROR BOUNDARY =====
+  'Something went wrong': 'Bir şeyler ters gitti',
+  'Try again': 'Tekrar dene',
+
+  // ===== KEYBOARD SHORTCUTS =====
+  'Keyboard Shortcuts': 'Klavye Kısayolları',
+  'Toggle Layers': 'Katmanları Aç/Kapat',
+  'Toggle Markets': 'Piyasaları Aç/Kapat',
+  'Toggle SCM Panel': 'Tedarik Zinciri Panelini Aç/Kapat',
+  'Toggle Intel Feed': 'İstihbarat Akışını Aç/Kapat',
+  'Toggle Search': 'Aramayı Aç/Kapat',
+  'Reset Map View': 'Harita Görünümünü Sıfırla',
+  'Toggle Projection': 'Projeksiyonu Değiştir',
+  'Toggle Fullscreen': 'Tam Ekranı Aç/Kapat',
+  'Close': 'Kapat',
+
+  // ===== AiAnalyst =====
+  'AI ANALYST': 'AI ANALİST',
+  'Ask anything about global intelligence...': 'Küresel istihbarat hakkında her şeyi sor...',
+  'Send': 'Gönder',
+  'Analyzing...': 'Analiz ediliyor...',
+  'Error': 'Hata',
+  'Request failed': 'İstek başarısız',
+
+  // ===== AiOverview =====
+  'Generate Overview': 'Genel Bakış Oluştur',
+  'Generating...': 'Oluşturuluyor...',
+
+  // ===== TokenPanel =====
+  '$GÖKSEL Token': '$GÖKSEL Token',
+
+  // ===== SharePanel =====
+  'Share View': 'Görünümü Paylaş',
+  'Copy Link': 'Bağlantıyı Kopyala',
+  'Copied!': 'Kopyalandı!',
+  'Copy Image': 'Görseli Kopyala',
+
+  // ===== SCALE BAR =====
+  km: 'km',
+
+  // ===== View Presets =====
+  'Quick Navigate': 'Hızlı Git',
+
+  // ===== Error States =====
+  '⚠ [NAME] ERROR': '⚠ [İSİM] HATA',
+  ERROR: 'HATA',
+  'CONNECTING': 'BAĞLANIYOR',
+  'CONNECTED': 'BAĞLANDI',
+
+  // ===== GLOBAL STATUS BAR =====
+  Depth: 'Derinlik',
+  Time: 'Zaman',
+  Magnitude: 'Büyüklük',
+
+};
+
+interface I18nContextType {
+  lang: Language;
+  setLang: (lang: Language) => void;
+  t: (key: string) => string;
+}
+
+const I18nContext = createContext<I18nContextType>({
+  lang: 'en',
+  setLang: () => {},
+  t: (key: string) => key,
+});
+
+export function I18nProvider({ children }: { children: React.ReactNode }) {
+  const [lang, setLang] = useState<Language>('en');
+
+  const t = useCallback((key: string): string => {
+    if (lang === 'en') return key;
+    return TR[key] || key;
+  }, [lang]);
+
+  return (
+    <I18nContext.Provider value={{ lang, setLang, t }}>
+      {children}
+    </I18nContext.Provider>
+  );
+}
+
+export function useI18n() {
+  return useContext(I18nContext);
+}

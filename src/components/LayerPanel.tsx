@@ -1,5 +1,6 @@
 'use client';
 
+import { useI18n } from '@/lib/i18n';
 import { memo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -16,97 +17,6 @@ interface LayerPanelProps {
   theme?: 'core' | 'ghost';
   setTheme?: (theme: 'core' | 'ghost') => void;
 }
-
-const LAYER_GROUPS = [
-  {
-    label: 'SDK',
-    fullLabel: 'OSIRIS SDK',
-    icon: Database,
-    layers: [
-      { key: 'sdk_sea', label: 'Maritime Lines', dataKey: 'sdk_entities' },
-    ],
-  },
-  {
-    label: 'AVIATION',
-    fullLabel: 'AVIATION',
-    icon: Plane,
-    layers: [
-      { key: 'flights', label: 'Commercial', dataKey: 'commercial_flights' },
-      { key: 'private', label: 'Private', dataKey: 'private_flights' },
-      { key: 'jets', label: 'Private Jets', dataKey: 'private_jets' },
-      { key: 'military', label: 'Military', dataKey: 'military_flights' },
-    ],
-  },
-  {
-    label: 'MARITIME',
-    fullLabel: 'MARITIME',
-    icon: Ship,
-    layers: [
-      { key: 'maritime', label: 'Maritime / Naval', dataKey: 'maritime_ships,maritime_ports,maritime_chokepoints' },
-    ],
-  },
-  {
-    label: 'SPACE',
-    fullLabel: 'SPACE TRACKING',
-    icon: Satellite,
-    layers: [
-      { key: 'satellites', label: 'All Satellites', dataKey: 'satellites' },
-      { key: 'sat_comms', label: 'Starlink / Comms', dataKey: 'satellites', catKey: 'comms' },
-      { key: 'sat_military', label: 'Military / Intel', dataKey: 'satellites', catKey: 'military' },
-      { key: 'sat_navigation', label: 'GPS / Navigation', dataKey: 'satellites', catKey: 'navigation' },
-      { key: 'sat_earth', label: 'Earth Observation', dataKey: 'satellites', catKey: 'earth_obs' },
-      { key: 'sat_science', label: 'Stations / Telescopes', dataKey: 'satellites', catKey: 'science' },
-    ],
-  },
-  {
-    label: 'SURVEIL',
-    fullLabel: 'SURVEILLANCE',
-    icon: Camera,
-    layers: [
-      { key: 'cctv', label: 'CCTV Cameras', dataKey: 'cameras' },
-      { key: 'live_news', label: 'Live News Feeds', dataKey: 'live_feeds' },
-      { key: 'news_intel', label: 'SIGINT News', dataKey: 'sigint_news' },
-    ],
-  },
-  {
-    label: 'HAZARD',
-    fullLabel: 'NATURAL HAZARDS',
-    icon: CloudLightning,
-    layers: [
-      { key: 'earthquakes', label: 'Earthquakes', dataKey: 'earthquakes' },
-      { key: 'fires', label: 'Active Fires', dataKey: 'fires' },
-      { key: 'weather', label: 'Severe Weather', dataKey: 'weather_events' },
-    ],
-  },
-  {
-    label: 'THREAT',
-    fullLabel: 'THREATS & INTEL',
-    icon: AlertTriangle,
-    layers: [
-      { key: 'infrastructure', label: 'Nuclear Facilities', dataKey: 'infrastructure' },
-      { key: 'global_incidents', label: 'Global Incidents', dataKey: 'gdelt' },
-      { key: 'gps_jamming', label: 'GPS Jamming', dataKey: 'gps_jamming' },
-    ],
-  },
-  {
-    label: 'NETWORK',
-    fullLabel: 'NETWORK INTEL',
-    icon: Network,
-    layers: [
-      { key: 'malware', label: 'Live Malware', dataKey: 'malware_threats' },
-      { key: 'cyber_attacks', label: 'Live Attacks', dataKey: 'cyber_attacks' },
-    ],
-  },
-  {
-    label: 'DISPLAY',
-    fullLabel: 'DISPLAY',
-    icon: Sun,
-    layers: [
-      { key: 'day_night', label: 'Day / Night Cycle', dataKey: '' },
-      { key: 'terrain_3d', label: '3D Terrain & Buildings', dataKey: '' },
-    ],
-  },
-];
 
 /* ── Minimal Toggle Switch ── */
 function ToggleSwitch({ active, onClick }: { active: boolean; onClick: () => void }) {
@@ -140,7 +50,99 @@ function ToggleSwitch({ active, onClick }: { active: boolean; onClick: () => voi
 }
 
 function LayerPanel({ data, activeLayers, setActiveLayers, isMobile, theme = 'core', setTheme }: LayerPanelProps) {
+  const { t } = useI18n();
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+
+  const LAYER_GROUPS = [
+    {
+      label: t('SDK'),
+      fullLabel: t('GÖKSEL SDK'),
+      icon: Database,
+      layers: [
+        { key: 'sdk_sea', label: t('Maritime Lines'), dataKey: 'sdk_entities' },
+      ],
+    },
+    {
+      label: t('AVIATION'),
+      fullLabel: t('AVIATION'),
+      icon: Plane,
+      layers: [
+        { key: 'flights', label: t('Commercial'), dataKey: 'commercial_flights' },
+        { key: 'private', label: t('Private'), dataKey: 'private_flights' },
+        { key: 'jets', label: t('Private Jets'), dataKey: 'private_jets' },
+        { key: 'military', label: t('Military'), dataKey: 'military_flights' },
+      ],
+    },
+    {
+      label: t('MARITIME'),
+      fullLabel: t('MARITIME'),
+      icon: Ship,
+      layers: [
+        { key: 'maritime', label: t('Maritime / Naval'), dataKey: 'maritime_ships,maritime_ports,maritime_chokepoints' },
+      ],
+    },
+    {
+      label: t('SPACE'),
+      fullLabel: t('SPACE TRACKING'),
+      icon: Satellite,
+      layers: [
+        { key: 'satellites', label: t('All Satellites'), dataKey: 'satellites' },
+        { key: 'sat_comms', label: t('Starlink / Comms'), dataKey: 'satellites', catKey: 'comms' },
+        { key: 'sat_military', label: t('Military / Intel'), dataKey: 'satellites', catKey: 'military' },
+        { key: 'sat_navigation', label: t('GPS / Navigation'), dataKey: 'satellites', catKey: 'navigation' },
+        { key: 'sat_earth', label: t('Earth Observation'), dataKey: 'satellites', catKey: 'earth_obs' },
+        { key: 'sat_science', label: t('Stations / Telescopes'), dataKey: 'satellites', catKey: 'science' },
+      ],
+    },
+    {
+      label: t('SURVEIL'),
+      fullLabel: t('SURVEILLANCE'),
+      icon: Camera,
+      layers: [
+        { key: 'cctv', label: t('CCTV Cameras'), dataKey: 'cameras' },
+        { key: 'live_news', label: t('Live News Feeds'), dataKey: 'live_feeds' },
+        { key: 'news_intel', label: t('SIGINT News'), dataKey: 'sigint_news' },
+      ],
+    },
+    {
+      label: t('HAZARD'),
+      fullLabel: t('NATURAL HAZARDS'),
+      icon: CloudLightning,
+      layers: [
+        { key: 'earthquakes', label: t('Earthquakes'), dataKey: 'earthquakes' },
+        { key: 'fires', label: t('Active Fires'), dataKey: 'fires' },
+        { key: 'weather', label: t('Severe Weather'), dataKey: 'weather_events' },
+      ],
+    },
+    {
+      label: t('THREAT'),
+      fullLabel: t('THREATS & INTEL'),
+      icon: AlertTriangle,
+      layers: [
+        { key: 'infrastructure', label: t('Nuclear Facilities'), dataKey: 'infrastructure' },
+        { key: 'global_incidents', label: t('Global Incidents'), dataKey: 'gdelt' },
+        { key: 'gps_jamming', label: t('GPS Jamming'), dataKey: 'gps_jamming' },
+      ],
+    },
+    {
+      label: t('NETWORK'),
+      fullLabel: t('NETWORK INTEL'),
+      icon: Network,
+      layers: [
+        { key: 'malware', label: t('Live Malware'), dataKey: 'malware_threats' },
+        { key: 'cyber_attacks', label: t('Live Attacks'), dataKey: 'cyber_attacks' },
+      ],
+    },
+    {
+      label: t('DISPLAY'),
+      fullLabel: t('DISPLAY'),
+      icon: Sun,
+      layers: [
+        { key: 'day_night', label: t('Day / Night Cycle'), dataKey: '' },
+        { key: 'terrain_3d', label: t('3D Terrain & Buildings'), dataKey: '' },
+      ],
+    },
+  ];
 
   const toggle = (key: string) => setActiveLayers((prev: any) => ({ ...prev, [key]: !prev[key] }));
 
@@ -197,7 +199,7 @@ function LayerPanel({ data, activeLayers, setActiveLayers, isMobile, theme = 'co
         {/* MOBILE GHOST TOGGLE */}
         {setTheme && (
           <div className="flex items-center justify-between mt-2 pt-3 border-t border-white/[0.06] px-1">
-            <span className="text-[9px] font-mono tracking-[0.2em] text-white/25 uppercase">Ghost Protocol</span>
+            <span className="text-[9px] font-mono tracking-[0.2em] text-white/25 uppercase">{t('Ghost Protocol')}</span>
             <button
               onClick={() => setTheme(theme === 'core' ? 'ghost' : 'core')}
               className="w-8 h-8 rounded-full flex items-center justify-center transition-all"
@@ -325,7 +327,7 @@ function LayerPanel({ data, activeLayers, setActiveLayers, isMobile, theme = 'co
           style={{
             background: theme === 'ghost' ? 'rgba(179, 136, 255, 0.1)' : 'transparent',
           }}
-          title="Ghost Protocol"
+          title={t('Ghost Protocol')}
         >
           <Ghost
             className="transition-all duration-500"

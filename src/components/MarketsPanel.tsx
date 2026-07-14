@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useI18n } from '@/lib/i18n';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -10,14 +11,6 @@ import {
 import AiOverview from './AiOverview';
 
 interface MarketsPanelProps { data: any; spaceWeather?: any; }
-
-const SECTIONS = [
-  { key: 'indices', label: 'INDICES', icon: LineChart },
-  { key: 'stocks', label: 'DEFENSE', icon: Shield },
-  { key: 'oil', label: 'ENERGY', icon: Droplets },
-  { key: 'commodities', label: 'COMMODITIES', icon: Gem },
-  { key: 'crypto', label: 'CRYPTO', icon: Bitcoin },
-];
 
 function Ticker({ name, data: d }: { name: string; data: any }) {
   if (!d) return null;
@@ -38,10 +31,19 @@ function Ticker({ name, data: d }: { name: string; data: any }) {
 }
 
 export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(true);
   const [maximized, setMaximized] = useState(false);
   const [activeSection, setActiveSection] = useState('stocks');
   const markets = data.markets || {};
+
+  const SECTIONS = [
+    { key: 'indices', label: t('INDICES'), icon: LineChart },
+    { key: 'stocks', label: t('DEFENSE'), icon: Shield },
+    { key: 'oil', label: t('ENERGY'), icon: Droplets },
+    { key: 'commodities', label: t('COMMODITIES'), icon: Gem },
+    { key: 'crypto', label: t('CRYPTO'), icon: Bitcoin },
+  ];
 
   // Ensure portal only renders on client
   const [mounted, setMounted] = useState(false);
@@ -49,20 +51,20 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
 
   const content = (
     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.6, duration: 0.6 }} className={`glass-panel p-3 pointer-events-auto transition-all duration-300 flex flex-col ${maximized ? 'fixed inset-4 z-[9999] bg-[#0a0a09]/95 backdrop-blur-3xl' : ''}`}>
-      <button onClick={() => setExpanded(!expanded)} className="flex items-center justify-between w-full mb-2">
+      <div onClick={() => setExpanded(!expanded)} role="button" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setExpanded(!expanded); }} className="flex items-center justify-between w-full mb-2 cursor-pointer">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-3.5 h-3.5 text-[var(--gold-primary)]" />
-          <span className="hud-text text-[12px] text-[var(--text-primary)]">MARKETS & INTEL</span>
-          <span className="gotham-tag gotham-tag--low" style={{ fontSize: '7px', padding: '1px 4px' }}>LIVE</span>
+          <span className="hud-text text-[12px] text-[var(--text-primary)]">{t('MARKETS & INTEL')}</span>
+          <span className="gotham-tag gotham-tag--low" style={{ fontSize: '7px', padding: '1px 4px' }}>{t('LIVE')}</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--alert-green)] animate-osiris-pulse" />
-          <button onClick={(e) => { e.stopPropagation(); setMaximized(!maximized); if (!expanded && !maximized) setExpanded(true); }} className="hover:text-white transition-colors" title={maximized ? "Restore" : "Maximize"}>
+          <button onClick={(e) => { e.stopPropagation(); setMaximized(!maximized); if (!expanded && !maximized) setExpanded(true); }} className="hover:text-white transition-colors" title={maximized ? t('Restore') : t('Maximize')}>
             {maximized ? <Minimize2 className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <Maximize2 className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
           </button>
           {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
         </div>
-      </button>
+      </div>
 
       <AnimatePresence>
         {expanded && (
@@ -73,7 +75,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-1.5">
                     <Zap className="w-3 h-3" style={{ color: spaceWeather.storm_color }} />
-                    <span className="text-[10px] font-mono tracking-widest text-[var(--text-muted)]">SPACE WEATHER</span>
+                    <span className="text-[10px] font-mono tracking-widest text-[var(--text-muted)]">{t('SPACE WEATHER')}</span>
                   </div>
                   <span className="text-[10px] font-mono font-bold" style={{ color: spaceWeather.storm_color }}>
                     Kp {spaceWeather.kp_index} — {spaceWeather.storm_level}
@@ -81,7 +83,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
                 </div>
                 {spaceWeather.solar_flares?.length > 0 && (
                   <div className="mt-1 text-[8px] font-mono text-[var(--text-muted)]">
-                    Latest flare: {spaceWeather.solar_flares[0].class}
+                    {t('Latest flare:')} {spaceWeather.solar_flares[0].class}
                   </div>
                 )}
               </div>
@@ -123,7 +125,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
                 <Ticker key={name} name={name} data={d} />
               ))}
               {(!markets[activeSection] || Object.keys(markets[activeSection]).length === 0) && (
-                <div className="text-center py-3 text-[10px] font-mono text-[var(--text-muted)]">Loading {activeSection}...</div>
+                <div className="text-center py-3 text-[10px] font-mono text-[var(--text-muted)]">{t('Loading')} {activeSection}...</div>
               )}
             </div>
           </motion.div>

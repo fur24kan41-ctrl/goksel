@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Globe, MapPin } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 interface ViewPresetsProps {
   onNavigate: (lat: number, lng: number, zoom: number) => void;
@@ -23,6 +24,7 @@ const PRESETS = [
 ];
 
 export default function ViewPresets({ onNavigate }: ViewPresetsProps) {
+  const { t } = useI18n();
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -32,9 +34,9 @@ export default function ViewPresets({ onNavigate }: ViewPresetsProps) {
     >
       <div className="flex items-center gap-2 mb-2">
         <Globe className="w-3.5 h-3.5 text-[var(--gold-primary)]" />
-        <span className="hud-text text-[12px] text-[var(--text-primary)] tracking-widest">REGION PRESETS</span>
+        <span className="hud-text text-[12px] text-[var(--text-primary)] tracking-widest">{t('REGION PRESETS')}</span>
         <span className="gotham-tag gotham-tag--critical" style={{ fontSize: '7px', padding: '1px 4px', marginLeft: 'auto' }}>
-          {PRESETS.filter(p => (p as any).hot).length} HOT
+          {PRESETS.filter(p => (p as any).hot).length} {t('HOT')}
         </span>
       </div>
       <div className="grid grid-cols-2 gap-1">

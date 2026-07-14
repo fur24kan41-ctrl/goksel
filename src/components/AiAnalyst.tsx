@@ -19,6 +19,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import type { IntelligenceContext } from '@/lib/ai-engine';
+import { useI18n } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    OSIRIS — AI Intelligence Analyst Panel
@@ -188,6 +189,7 @@ function renderMarkdown(text: string): string {
    ───────────────────────────────────────────────────────────── */
 
 export default function AiAnalyst({ data }: AiAnalystProps) {
+  const { t } = useI18n();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
@@ -378,7 +380,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
         boxShadow:
           '0 0 30px rgba(212, 175, 55, 0.2), 0 0 60px rgba(212, 175, 55, 0.1), 0 4px 20px rgba(0, 0, 0, 0.5)',
       }}
-      aria-label="Open AI Intelligence Analyst"
+      aria-label={t('Open AI Intelligence Analyst')}
     >
       <Brain className="w-6 h-6 text-[var(--gold-primary)]" />
       {/* Pulse rings */}
@@ -448,7 +450,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
                     <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-[var(--alert-green)] animate-osiris-pulse" />
                   </div>
                   <div className="flex flex-col">
-                    <span className="hud-text text-[11px] text-[var(--text-heading)]">OSIRIS ANALYST</span>
+                    <span className="hud-text text-[11px] text-[var(--text-heading)]">{t('GÖKSEL ANALYST')}</span>
                     <span className="text-[7px] font-mono tracking-[0.2em] text-[var(--text-muted)]">
                       GEMINI 2.0 FLASH • ONLINE
                     </span>
@@ -460,7 +462,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
                     <button
                       onClick={clearMessages}
                       className="p-1.5 rounded-lg hover:bg-[var(--hover-accent)] transition-colors group"
-                      title="Clear conversation"
+                      title={t('Clear conversation')}
                     >
                       <Trash2 className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--alert-red)]" />
                     </button>
@@ -468,7 +470,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
                   <button
                     onClick={() => setShowSettings(!showSettings)}
                     className="p-1.5 rounded-lg hover:bg-[var(--hover-accent)] transition-colors group"
-                    title="Settings"
+                    title={t('Settings')}
                   >
                     <Settings
                       className={`w-3.5 h-3.5 transition-colors ${
@@ -479,7 +481,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
                   <button
                     onClick={() => setIsOpen(false)}
                     className="p-1.5 rounded-lg hover:bg-[var(--hover-accent)] transition-colors group"
-                    title="Close"
+                    title={t('Close')}
                   >
                     <X className="w-3.5 h-3.5 text-[var(--text-muted)] group-hover:text-[var(--text-primary)]" />
                   </button>
@@ -547,7 +549,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
                         )}
                       </div>
                       <p className="text-[8px] font-mono text-[var(--text-muted)] leading-relaxed">
-                        Your key is stored locally and sent only to the OSIRIS server. Get a free key at{' '}
+                        Your key is stored locally and sent only to the GÖKSEL server. Get a free key at{' '}
                         <a
                           href="https://aistudio.google.com/apikey"
                           target="_blank"
@@ -679,7 +681,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
                               : 'var(--gold-primary)',
                           }}
                         >
-                          {msg.role === 'user' ? 'OPERATOR' : 'OSIRIS ANALYST'}
+                          {msg.role === 'user' ? 'OPERATOR' : 'GÖKSEL ANALYST'}
                         </span>
                         <span className="text-[7px] font-mono text-[var(--text-muted)] ml-auto">
                           {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -782,7 +784,7 @@ export default function AiAnalyst({ data }: AiAnalystProps) {
                       value={inputText}
                       onChange={(e) => setInputText(e.target.value)}
                       onKeyDown={handleKeyDown}
-                      placeholder="Query the intelligence analyst..."
+                      placeholder={t('Query the intelligence analyst...')}
                       rows={1}
                       className="w-full bg-transparent px-3 py-2.5 text-[11px] font-mono text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:outline-none resize-none"
                       style={{ maxHeight: '120px', minHeight: '36px' }}
