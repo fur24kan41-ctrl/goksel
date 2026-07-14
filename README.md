@@ -1,5 +1,7 @@
 <div align="center">
 
+OSIRIS'in Türkçe lokalizasyonu. Orijinal: https://github.com/simplifaisoul/osiris
+
 # ⬡ OSIRIS
 
 ### Open Source Intelligence & Reconnaissance Integrated System
@@ -132,8 +134,8 @@ Osiris is a production-grade OSINT platform that provides situational awareness 
 ## Quick Start
 
 ```bash
-git clone https://github.com/simplifaisoul/osiris.git
-cd osiris
+git clone https://github.com/fur24kan41-ctrl/goksel
+cd goksel
 npm install
 npm run dev
 ```
