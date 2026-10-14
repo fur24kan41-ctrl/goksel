@@ -1,5 +1,6 @@
 <div align="center">
-
+OSIRIS'in Türkçe lokalizasyonu. Orijinal: https://github.com/simplifaisoul/osiris
+  
 # ⬡ OSIRIS
 
 ### Open Source Intelligence & Reconnaissance Integrated System
@@ -166,7 +167,7 @@ Run `npm test` for offline checks or `RUN_LIVE_TESTS=1 npx vitest run src/app/ap
 ## Quick Start
 
 ```bash
-git clone https://github.com/simplifaisoul/osiris.git
+git clone https://github.com/simplifaisoul/goksel.git
 cd osiris
 npm install
 npm run dev
