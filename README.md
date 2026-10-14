@@ -168,7 +168,7 @@ Run `npm test` for offline checks or `RUN_LIVE_TESTS=1 npx vitest run src/app/ap
 
 ```bash
 git clone https://github.com/fur24kan41-ctrl/goksel.git
-cd osiris
+cd goksel
 npm install
 npm run dev
 ```
