@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
+import { useI18n } from '@/lib/i18n';
 
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -110,6 +111,11 @@ const OP_CLR:Record<string,string>={SCAN:'#00E6FF',PROBE:'#B388FF',READ:'#64FFDA
    COMPONENT
    ═══════════════════════════════════════════════════════════════ */
 export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,onPlaceOnMap?:(devs:{id:string,name:string,lat:number,lng:number,type:string,color:string}[])=>void}){
+  const { t, lang } = useI18n();
+  // Memoized callbacks (Web Bluetooth, timers, exports) outlive a render, so
+  // they read the translator through a ref and never freeze on a stale one.
+  const tRef = useRef(t);
+  useEffect(()=>{tRef.current=t;},[t]);
   const [devices,setDevices]=useState<BLEDev[]>([]);
   const [scanning,setScanning]=useState(false);
   const [btOk,setBtOk]=useState(true);
@@ -155,12 +161,12 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
 
   const setErr=useCallback((m:string|null)=>{if(!mtd.current)return;setError(m);if(errT.current)clearTimeout(errT.current);if(m)errT.current=setTimeout(()=>{if(mtd.current)setError(null);},6000);},[]);
   const log=useCallback((op:PktOp,src:string,msg:string,hex?:string,len?:number)=>{if(!mtd.current||paused)return;const p:Pkt={id:++pid.current,ts:Date.now(),op,src,msg,hex,len};setPkts(prev=>{const next=[...prev,p];return next.length>3000?next.slice(-3000):next;});if(len)setBytes(b=>b+len);},[paused]);
-  const onDC=useCallback((e:Event)=>{if(!mtd.current)return;const d=e.target as BluetoothDevice;setDevices(p=>p.map(x=>x.bt===d?{...x,connected:false,srv:undefined}:x));log('DISCONNECT',d.name||'?','GATT disconnected');},[log]);
+  const onDC=useCallback((e:Event)=>{if(!mtd.current)return;const d=e.target as BluetoothDevice;setDevices(p=>p.map(x=>x.bt===d?{...x,connected:false,srv:undefined}:x));log('DISCONNECT',d.name||'?',tRef.current('GATT disconnected'));},[log]);
 
   /* ═══ PERSIST TO VAULT ═══ */
   const saveToVault=useCallback(async(dev:BLEDev)=>{
     const safe={...dev,bt:undefined,srv:undefined};// strip non-serializable
-    try{await vaultSave(safe);setVaultCount(c=>c+1);log('INFO','VAULT',`Saved "${dev.name}" to local database`);}catch(e:any){log('ERROR','VAULT',e.message);}
+    try{await vaultSave(safe);setVaultCount(c=>c+1);log('INFO','VAULT',`${tRef.current('Saved')} "${dev.name}" ${tRef.current('to local database')}`);}catch(e:any){log('ERROR','VAULT',e.message);}
   },[log]);
 
   /* ═══ VIEW ON WORLD MAP ═══ */
@@ -183,15 +189,15 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
     const gattDump:{svc:string;char:string;value:string;hex:string;props:string}[]=[];
 
     // GPS tag
-    log('GPS','SCANNER','Acquiring GPS fix...');
+    log('GPS','SCANNER',tRef.current('Acquiring GPS fix...'));
     const geo=await getGPS();
-    if(geo)log('GPS','SCANNER',`Fix: ${geo.lat.toFixed(6)}, ${geo.lng.toFixed(6)} (±${Math.round(geo.acc)}m)${geo.alt!=null?` alt:${Math.round(geo.alt)}m`:''}${geo.speed!=null?` ${(geo.speed*3.6).toFixed(1)}km/h`:''}`);
-    else log('GPS','SCANNER','No GPS available');
+    if(geo)log('GPS','SCANNER',`${tRef.current('Fix')}: ${geo.lat.toFixed(6)}, ${geo.lng.toFixed(6)} (±${Math.round(geo.acc)}m)${geo.alt!=null?` alt:${Math.round(geo.alt)}m`:''}${geo.speed!=null?` ${(geo.speed*3.6).toFixed(1)}km/h`:''}`);
+    else log('GPS','SCANNER',tRef.current('No GPS available'));
 
-    log('PROBE',dev.name,'══ DEEP PROBE + AUTO-VACUUM ══');
+    log('PROBE',dev.name,tRef.current('══ DEEP PROBE + AUTO-VACUUM ══'));
     try{
       const s=await dev.bt.gatt.connect();
-      log('CONNECT',dev.name,'GATT connected — vacuuming all data');
+      log('CONNECT',dev.name,tRef.current('GATT connected — vacuuming all data'));
 
       // Generic Access
       try{const ga=await s.getPrimaryService(0x1800);services.push('Generic Access');
@@ -216,7 +222,7 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
       try{const tx=await s.getPrimaryService(0x1804);services.push('TX Power');foundSvcs.push(0x1804);const tc=await tx.getCharacteristic(0x2A07);const tv=await tc.readValue();txPower=tv.getInt8(0);totalBytes+=tv.byteLength;gattDump.push({svc:'TX Power',char:'TX Power Level',value:`${txPower} dBm`,hex:'',props:'R'});log('READ',name,`TX Power → ${txPower} dBm`);charCount++;}catch{}
 
       // AUTO-VACUUM: discover ALL services and read EVERY readable characteristic
-      log('PROBE',name,'Auto-vacuum: reading all accessible data...');
+      log('PROBE',name,tRef.current('Auto-vacuum: reading all accessible data...'));
       try{
         const allSvcs=await s.getPrimaryServices();
         for(const sv of allSvcs){const sn=nameUUID(sv.uuid);if(!services.includes(sn))services.push(sn);
@@ -227,21 +233,21 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
                   gattDump.push({svc:sn,char:cn,value:d.text,hex:d.hex,props:fl});
                   log('READ',name,`${sn}/${cn} → ${d.text.slice(0,60)}`,d.hex,v.byteLength);
                 }catch{}
-              }else{gattDump.push({svc:sn,char:cn,value:'(not readable)',hex:'',props:fl});}
+              }else{gattDump.push({svc:sn,char:cn,value:tRef.current('(not readable)'),hex:'',props:fl});}
             }
           }catch{}
         }
       }catch{}
 
       // Scan known service UUIDs for discovery
-      for(const svc of PROBE_SVCS){try{await s.getPrimaryService(svc);foundSvcs.push(svc);const sn=SVC_NAMES[svc]||`0x${svc.toString(16)}`;if(!services.includes(sn)){services.push(sn);log('ENUM',name,`Service: ${sn}`);};}catch{}}
+      for(const svc of PROBE_SVCS){try{await s.getPrimaryService(svc);foundSvcs.push(svc);const sn=SVC_NAMES[svc]||`0x${svc.toString(16)}`;if(!services.includes(sn)){services.push(sn);log('ENUM',name,`${tRef.current('Service')}: ${sn}`);};}catch{}}
 
       try{s.disconnect();}catch{}
-    }catch(e:any){log('ERROR',dev.name,`Probe error: ${e.message}`);}
+    }catch(e:any){log('ERROR',dev.name,`${tRef.current('Probe error')}: ${e.message}`);}
 
     const cls=classify(name,appearance,mfr,foundSvcs);
     const ms=Math.round(performance.now()-p0);
-    log('INFO',name,`✓ VACUUM COMPLETE — ${cls.type} via ${cls.by} — ${services.length} svcs, ${charCount} chars, ${gattDump.length} values, ${totalBytes}B in ${ms}ms`);
+    log('INFO',name,`✓ ${tRef.current('VACUUM COMPLETE')} — ${tRef.current(cls.type)} ${tRef.current('via')} ${tRef.current(cls.by)} — ${services.length} ${tRef.current('svcs')}, ${charCount} ${tRef.current('chars')}, ${gattDump.length} ${tRef.current('values')}, ${totalBytes}B ${tRef.current('in')} ${ms}ms`);
 
     return{...dev,name,probing:false,probeMs:ms,battery,txPower,...cls,classBy:cls.by,
       manufacturer:mfr,model,serial,firmware:fw,hardware:hw,software:sw,
@@ -252,32 +258,32 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
   /* ═══ SCAN ═══ */
   const scan=useCallback(async()=>{
     if(!navigator.bluetooth||scanning)return;setScanning(true);setErr(null);
-    log('SCAN','SCANNER','══ MARAUDER SCAN INITIATED ══');
+    log('SCAN','SCANNER',tRef.current('══ MARAUDER SCAN INITIATED ══'));
     try{
       const d=await navigator.bluetooth.requestDevice({acceptAllDevices:true,optionalServices:ALL_OPT});
       if(!d){setScanning(false);return;}
-      if(devices.find(x=>x.id===d.id)){log('INFO','SCANNER','Already captured');setScanning(false);return;}
+      if(devices.find(x=>x.id===d.id)){log('INFO','SCANNER',tRef.current('Already captured'));setScanning(false);return;}
       d.addEventListener('gattserverdisconnected',onDC);
-      log('SCAN','SCANNER',`Target acquired: "${d.name||d.id}"`);
+      log('SCAN','SCANNER',`${tRef.current('Target acquired')}: "${d.name||d.id}"`);
       const raw:BLEDev={id:d.id,name:d.name||`Device-${d.id.slice(0,6)}`,type:'Unknown',icon:Bluetooth,color:'#90A4AE',classBy:'—',connected:false,probing:true,services:[],serviceCount:0,charCount:0,totalBytes:0,gattDump:[],rssiHistory:[],capturedAt:Date.now(),bt:d};
       setDevices(p=>[...p,raw]);
       const probed=await deepProbe(raw);
       if(mtd.current){setDevices(p=>p.map(x=>x.id===d.id?probed:x));await saveToVault(probed);}
-    }catch(e:any){if(e.name!=='NotFoundError'){setErr(e.message);log('ERROR','SCANNER',e.message);}else log('INFO','SCANNER','Picker dismissed');}
+    }catch(e:any){if(e.name!=='NotFoundError'){setErr(e.message);log('ERROR','SCANNER',e.message);}else log('INFO','SCANNER',tRef.current('Picker dismissed'));}
     finally{if(mtd.current)setScanning(false);}
   },[devices,scanning,deepProbe,onDC,setErr,log,saveToVault]);
 
   /* ═══ CONNECT / DISCONNECT ═══ */
-  const connect=useCallback(async(dev:BLEDev)=>{if(!dev.bt?.gatt||connecting)return;setConnecting(dev.id);log('CONNECT',dev.name,'Connecting...');
+  const connect=useCallback(async(dev:BLEDev)=>{if(!dev.bt?.gatt||connecting)return;setConnecting(dev.id);log('CONNECT',dev.name,tRef.current('Connecting...'));
     try{const s=await dev.bt.gatt.connect();let b=dev.battery;try{const bs=await s.getPrimaryService(0x180F);const bc=await bs.getCharacteristic(0x2A19);b=(await bc.readValue()).getUint8(0);}catch{}
-      setDevices(p=>p.map(d=>d.id===dev.id?{...d,connected:true,srv:s,battery:b}:d));log('CONNECT',dev.name,'✓ Connected');
+      setDevices(p=>p.map(d=>d.id===dev.id?{...d,connected:true,srv:s,battery:b}:d));log('CONNECT',dev.name,tRef.current('✓ Connected'));
     }catch(e:any){setErr(e.message);log('ERROR',dev.name,e.message);}finally{if(mtd.current)setConnecting(null);}
   },[connecting,setErr,log]);
-  const disconnect=useCallback((dev:BLEDev)=>{try{dev.bt?.gatt?.connected&&dev.bt.gatt.disconnect();}catch{}setDevices(p=>p.map(d=>d.id===dev.id?{...d,connected:false,srv:undefined}:d));if(gattTarget===dev.id){setGattTarget(null);setGattSvcs([]);}log('DISCONNECT',dev.name,'Dropped');},[gattTarget,log]);
+  const disconnect=useCallback((dev:BLEDev)=>{try{dev.bt?.gatt?.connected&&dev.bt.gatt.disconnect();}catch{}setDevices(p=>p.map(d=>d.id===dev.id?{...d,connected:false,srv:undefined}:d));if(gattTarget===dev.id){setGattTarget(null);setGattSvcs([]);}log('DISCONNECT',dev.name,tRef.current('Dropped'));},[gattTarget,log]);
 
   /* ═══ GATT EXPLORER ═══ */
   const explore=useCallback(async(dev:BLEDev)=>{if(!dev.bt?.gatt)return;if(!dev.bt.gatt.connected){try{await dev.bt.gatt.connect();}catch{return;}}
-    setGattTarget(dev.id);setGattLoading(true);setGattSvcs([]);setExSvc(null);log('ENUM',dev.name,'Full GATT enumeration...');
+    setGattTarget(dev.id);setGattLoading(true);setGattSvcs([]);setExSvc(null);log('ENUM',dev.name,tRef.current('Full GATT enumeration...'));
     try{const svcs=await dev.bt.gatt.getPrimaryServices();const result:Svc[]=[];
       for(const s of svcs){const sn=nameUUID(s.uuid);const chars:Chr[]=[];
         try{for(const ch of await s.getCharacteristics()){let value:string|undefined,hex:string|undefined;
@@ -285,19 +291,19 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
           chars.push({uuid:ch.uuid,name:nameUUID(ch.uuid),p:{r:ch.properties.read,w:ch.properties.write,wn:ch.properties.writeWithoutResponse,n:ch.properties.notify,i:ch.properties.indicate},value,hex,char:ch});
         }}catch{}result.push({uuid:s.uuid,name:sn,chars});}
       if(mtd.current){setGattSvcs(result);if(result.length>0)setExSvc(result[0].uuid);}
-      log('INFO',dev.name,`✓ ${result.length} services, ${result.reduce((a,s)=>a+s.chars.length,0)} characteristics`);
+      log('INFO',dev.name,`✓ ${result.length} ${tRef.current('services')}, ${result.reduce((a,s)=>a+s.chars.length,0)} ${tRef.current('characteristics')}`);
     }catch(e:any){log('ERROR',dev.name,e.message);}finally{if(mtd.current)setGattLoading(false);}
   },[log]);
   const toggleN=useCallback(async(su:string,ch:Chr,dn:string)=>{if(!ch.char)return;const key=`${su}/${ch.uuid}`;try{if(ch.notifying){await ch.char.stopNotifications();const l=nL.current.get(key);if(l){ch.char.removeEventListener('characteristicvaluechanged',l);nL.current.delete(key);}setGattSvcs(p=>p.map(s=>s.uuid===su?{...s,chars:s.chars.map(c=>c.uuid===ch.uuid?{...c,notifying:false}:c)}:s));log('SUB',dn,`✗ ${ch.name}`);}else{await ch.char.startNotifications();const listener=(e:Event)=>{if(!mtd.current)return;const t=(e.target as BluetoothRemoteGATTCharacteristic).value;if(!t)return;const d=decode(t);setGattSvcs(p=>p.map(s=>s.uuid===su?{...s,chars:s.chars.map(c=>c.uuid===ch.uuid?{...c,value:d.text,hex:d.hex}:c)}:s));log('NOTIFY',dn,`${ch.name}: ${d.text.slice(0,50)}`,d.hex,t.byteLength);};ch.char.addEventListener('characteristicvaluechanged',listener);nL.current.set(key,listener);setGattSvcs(p=>p.map(s=>s.uuid===su?{...s,chars:s.chars.map(c=>c.uuid===ch.uuid?{...c,notifying:true}:c)}:s));log('SUB',dn,`✓ ${ch.name}`);}}catch(e:any){log('ERROR',dn,(e.message||'').slice(0,40));}
   },[log]);
 
   /* ═══ NETWORK RECON ═══ */
-  const runNetRecon=useCallback(async()=>{if(netLoading)return;setNetLoading(true);log('NET','RECON','══ NETWORK RECON ══');
+  const runNetRecon=useCallback(async()=>{if(netLoading)return;setNetLoading(true);log('NET','RECON',tRef.current('══ NETWORK RECON ══'));
     const intel=await probeNetwork();
-    intel.localIPs.forEach(ip=>log('NET','RECON',`Local IP: ${ip}`));
-    if(intel.type)log('NET','RECON',`Connection: ${intel.type} ↓${intel.downlink}Mbps RTT:${intel.rtt}ms`);
-    intel.openPorts.forEach(p=>log('NET','RECON',`Port ${p.port} OPEN → ${p.service} (${p.ms}ms)`));
-    log('INFO','RECON',`Network scan complete — ${intel.localIPs.length} IPs, ${intel.openPorts.length} open ports`);
+    intel.localIPs.forEach(ip=>log('NET','RECON',`${tRef.current('Local IP')}: ${ip}`));
+    if(intel.type)log('NET','RECON',`${tRef.current('Connection')}: ${intel.type} ↓${intel.downlink}Mbps RTT:${intel.rtt}ms`);
+    intel.openPorts.forEach(p=>log('NET','RECON',`${tRef.current('Port')} ${p.port} ${tRef.current('OPEN')} → ${p.service} (${p.ms}ms)`));
+    log('INFO','RECON',`${tRef.current('Network scan complete')} — ${intel.localIPs.length} ${tRef.current('IPs')}, ${intel.openPorts.length} ${tRef.current('open ports')}`);
     if(mtd.current){setNetIntel(intel);setNetLoading(false);}
   },[netLoading,log]);
 
@@ -306,13 +312,13 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
     const payload={version:'marauder_v8',exported:new Date().toISOString(),devices:devices.map(d=>({...d,bt:undefined,srv:undefined})),network:netIntel,packetCount:pkts.length,totalBytes:bytes};
     const blob=new Blob([JSON.stringify(payload,null,2)],{type:'application/json'});
     const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`marauder_${new Date().toISOString().replace(/[:.]/g,'-')}.json`;a.click();URL.revokeObjectURL(url);
-    log('INFO','EXPORT',`Exported ${devices.length} devices to JSON`);
+    log('INFO','EXPORT',`${tRef.current('Exported')} ${devices.length} ${tRef.current('devices')} ${tRef.current('to JSON')}`);
   },[devices,netIntel,pkts.length,bytes,log]);
   const exportCSV=useCallback(()=>{
     const rows=[['Name','Type','Manufacturer','Model','Serial','Battery','TX Power','Services','Chars','Bytes','Lat','Lng','GPS Acc','Captured'].join(',')];
     devices.forEach(d=>rows.push([d.name,d.type,d.manufacturer||'',d.model||'',d.serial||'',d.battery!=null?String(d.battery):'',d.txPower!=null?String(d.txPower):'',String(d.serviceCount),String(d.charCount),String(d.totalBytes),d.geo?d.geo.lat.toFixed(6):'',d.geo?d.geo.lng.toFixed(6):'',d.geo?String(Math.round(d.geo.acc)):'',new Date(d.capturedAt).toISOString()].map(v=>`"${v}"`).join(',')));
     const blob=new Blob([rows.join('\n')],{type:'text/csv'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=`marauder_${new Date().toISOString().replace(/[:.]/g,'-')}.csv`;a.click();URL.revokeObjectURL(url);
-    log('INFO','EXPORT',`Exported ${devices.length} devices to CSV`);
+    log('INFO','EXPORT',`${tRef.current('Exported')} ${devices.length} ${tRef.current('devices')} ${tRef.current('to CSV')}`);
   },[devices,log]);
 
   // Derived
@@ -331,21 +337,21 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
         <button onClick={()=>setExpanded(!expanded)} className="flex items-center gap-2 flex-1">
           <Crosshair className="w-3.5 h-3.5 text-[var(--cyan-primary)]"/>
           <span className="hud-text text-[11px] text-[var(--text-primary)]">MARAUDER</span>
-          <span className="gotham-tag gotham-tag--info" style={{fontSize:'9px',padding:'1px 5px'}}>{devices.length} DEVS</span>
-          {scanning&&<span className="gotham-tag" style={{fontSize:'9px',padding:'1px 5px',background:'rgba(0,230,255,0.1)',color:'var(--cyan-primary)'}}>SCANNING</span>}
+          <span className="gotham-tag gotham-tag--info" style={{fontSize:'9px',padding:'1px 5px'}}>{devices.length} {t('DEVS')}</span>
+          {scanning&&<span className="gotham-tag" style={{fontSize:'9px',padding:'1px 5px',background:'rgba(0,230,255,0.1)',color:'var(--cyan-primary)'}}>{t('SCANNING')}</span>}
         </button>
         <div className="flex items-center gap-2">
           <motion.button whileTap={{scale:0.95}} onClick={scan} disabled={scanning||!btOk}
             className="px-2.5 py-1 rounded-md text-[9px] font-mono font-bold tracking-wider flex items-center gap-1.5 disabled:opacity-30"
             style={{background:scanning?'rgba(0,230,255,0.08)':'rgba(0,230,255,0.12)',color:'var(--cyan-primary)',border:'1px solid rgba(0,230,255,0.12)'}}>
-            {scanning?<BluetoothSearching className="w-3 h-3 animate-pulse"/>:<Bluetooth className="w-3 h-3"/>}{scanning?'...':'SCAN'}
+            {scanning?<BluetoothSearching className="w-3 h-3 animate-pulse"/>:<Bluetooth className="w-3 h-3"/>}{scanning?'...':t('SCAN')}
           </motion.button>
           {geoCount>0&&<motion.button whileTap={{scale:0.95}} onClick={placeOnWorldMap}
             className="px-2.5 py-1 rounded-md text-[9px] font-mono font-bold tracking-wider flex items-center gap-1.5"
             style={{background:'rgba(255,183,77,0.08)',color:'#FFB74D',border:'1px solid rgba(255,183,77,0.1)'}}>
-            <MapPin className="w-3 h-3"/>VIEW ON MAP
+            <MapPin className="w-3 h-3"/>{t('VIEW ON MAP')}
           </motion.button>}
-          <button onClick={()=>setFull(!full)} className="p-1.5 -m-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors" title="Full Screen">
+          <button onClick={()=>setFull(!full)} className="p-1.5 -m-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors" title={t('Full Screen')}>
             {full?<Minimize2 className="w-3.5 h-3.5"/>:<Maximize2 className="w-3.5 h-3.5"/>}
           </button>
           <div className="w-1.5 h-1.5 rounded-full bg-[var(--cyan-primary)] animate-osiris-pulse"/>
@@ -364,7 +370,7 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
             {([['scan','DEVICES',Scan],['intel','INTEL',Globe],['log','LOG',Terminal]] as const).map(([id,label,Icon])=>(
               <button key={id} onClick={()=>setView(id as any)} className="flex items-center gap-1 px-2.5 py-1.5 rounded-md text-[9px] font-mono font-bold tracking-[0.12em] transition-all flex-1 justify-center"
                 style={{color:view===id?'var(--cyan-primary)':'var(--text-muted)',background:view===id?'rgba(0,230,255,0.06)':'transparent'}}>
-                <Icon className="w-3 h-3"/>{label}
+                <Icon className="w-3 h-3"/>{t(label)}
               </button>
             ))}
           </div>
@@ -382,12 +388,12 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
                   <div className="flex flex-col items-center justify-center py-8 opacity-40">
                     <Crosshair className="w-8 h-8 text-[var(--cyan-primary)] mb-2"/>
                     <p className="text-[10px] font-mono text-[var(--text-muted)] text-center tracking-wider">
-                      Hit <span className="text-[var(--cyan-primary)]">SCAN</span> to acquire targets<br/>
-                      <span className="text-[9px] opacity-50">Auto-vacuum · GPS-tagged · Vault</span>
+                      {t('Hit')} <span className="text-[var(--cyan-primary)]">{t('SCAN')}</span> {t('to acquire targets')}<br/>
+                      <span className="text-[9px] opacity-50">{t('Auto-vacuum · GPS-tagged · Vault')}</span>
                     </p>
                   </div>
                 )}
-                {!btOk&&<div className="p-2 rounded-lg" style={{background:'rgba(255,61,61,0.04)',border:'1px solid rgba(255,61,61,0.08)'}}><span className="text-[9px] font-mono text-[#FF3D3D]">Web Bluetooth unavailable — use Chrome/Edge on localhost</span></div>}
+                {!btOk&&<div className="p-2 rounded-lg" style={{background:'rgba(255,61,61,0.04)',border:'1px solid rgba(255,61,61,0.08)'}}><span className="text-[9px] font-mono text-[#FF3D3D]">{t('Web Bluetooth unavailable — use Chrome/Edge on localhost')}</span></div>}
 
                 {devices.map(dev=>{const isE=exDev===dev.id;const isG=gattTarget===dev.id;const isC=connecting===dev.id;
                   return(<motion.div key={dev.id} initial={{opacity:0,y:8}} animate={{opacity:1,y:0}} layout>
@@ -402,13 +408,13 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span className="text-[11px] font-mono font-bold text-[var(--text-primary)] truncate">{dev.name}</span>
-                            {dev.connected&&<span className="text-[9px] font-mono px-1 py-0.5 rounded bg-[var(--alert-green)]/10 text-[var(--alert-green)] tracking-widest font-bold">LIVE</span>}
+                            {dev.connected&&<span className="text-[9px] font-mono px-1 py-0.5 rounded bg-[var(--alert-green)]/10 text-[var(--alert-green)] tracking-widest font-bold">{t('LIVE')}</span>}
                           </div>
                           {dev.probing?(
-                            <div className="flex items-center gap-2"><motion.div className="h-1 rounded-full flex-1" style={{background:`${dev.color}10`}}><motion.div className="h-full rounded-full" style={{background:dev.color}} animate={{width:['0%','60%','100%']}} transition={{duration:3}}/></motion.div><span className="text-[9px] font-mono animate-pulse" style={{color:dev.color}}>VACUUMING</span></div>
+                            <div className="flex items-center gap-2"><motion.div className="h-1 rounded-full flex-1" style={{background:`${dev.color}10`}}><motion.div className="h-full rounded-full" style={{background:dev.color}} animate={{width:['0%','60%','100%']}} transition={{duration:3}}/></motion.div><span className="text-[9px] font-mono animate-pulse" style={{color:dev.color}}>{t('VACUUMING')}</span></div>
                           ):(
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded tracking-wider font-bold" style={{background:`${dev.color}10`,color:dev.color}}>{dev.type.toUpperCase()}</span>
+                              <span className="text-[9px] font-mono px-1.5 py-0.5 rounded tracking-wider font-bold" style={{background:`${dev.color}10`,color:dev.color}}>{t(dev.type).toLocaleUpperCase(lang)}</span>
                               {dev.battery!=null&&<span className="text-[9px] font-mono flex items-center gap-0.5" style={{color:dev.battery>50?'var(--alert-green)':dev.battery>20?'#FFB800':'#FF3D3D'}}><BatteryMedium className="w-2.5 h-2.5"/>{dev.battery}%</span>}
                               {dev.geo&&<span className="text-[9px] font-mono text-[#FFB74D] flex items-center gap-0.5"><MapPin className="w-2 h-2"/></span>}
                               <span className="text-[9px] font-mono text-[var(--text-muted)]">{dev.serviceCount}svcs · {dev.probeMs}ms</span>
@@ -423,13 +429,13 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
 
                         {/* Device Info */}
                         <div className="mt-2 mb-2.5 rounded-lg p-2.5" style={{background:'rgba(0,0,0,0.25)',border:'1px solid rgba(255,255,255,0.03)'}}>
-                          <div className="text-[9px] font-mono text-[var(--text-muted)] tracking-[0.2em] mb-1.5 font-bold">DEVICE INTEL</div>
+                          <div className="text-[9px] font-mono text-[var(--text-muted)] tracking-[0.2em] mb-1.5 font-bold">{t('DEVICE INTEL')}</div>
                           <div className="space-y-1">
                             {[{k:'Manufacturer',v:dev.manufacturer},{k:'Model',v:dev.model},{k:'Serial',v:dev.serial},{k:'Firmware',v:dev.firmware},{k:'TX Power',v:dev.txPower!=null?`${dev.txPower} dBm`:undefined}].filter(x=>x.v).map(x=>(
-                              <div key={x.k} className="flex gap-2"><span className="text-[9px] font-mono text-[var(--text-muted)] w-[65px] shrink-0 tracking-wider">{x.k}</span><span className="text-[9px] font-mono text-[var(--text-primary)] truncate">{x.v}</span></div>
+                              <div key={x.k} className="flex gap-2"><span className="text-[9px] font-mono text-[var(--text-muted)] w-[65px] shrink-0 tracking-wider">{t(x.k)}</span><span className="text-[9px] font-mono text-[var(--text-primary)] truncate">{x.v}</span></div>
                             ))}
                             {dev.geo&&<div className="flex gap-2"><span className="text-[9px] font-mono text-[var(--text-muted)] w-[65px] shrink-0 tracking-wider">GPS</span><span className="text-[9px] font-mono text-[#FFB74D]">{dev.geo.lat.toFixed(5)}, {dev.geo.lng.toFixed(5)} ±{Math.round(dev.geo.acc)}m</span></div>}
-                            <div className="flex gap-2"><span className="text-[9px] font-mono text-[var(--text-muted)] w-[65px] shrink-0 tracking-wider">Extracted</span><span className="text-[9px] font-mono text-[var(--text-muted)]">{dev.serviceCount}svcs · {dev.charCount}chars · {dev.gattDump.length}vals · {dev.totalBytes}B</span></div>
+                            <div className="flex gap-2"><span className="text-[9px] font-mono text-[var(--text-muted)] w-[65px] shrink-0 tracking-wider">{t('Extracted')}</span><span className="text-[9px] font-mono text-[var(--text-muted)]">{dev.serviceCount}svcs · {dev.charCount}chars · {dev.gattDump.length}vals · {dev.totalBytes}B</span></div>
                           </div>
                         </div>
 
@@ -437,7 +443,7 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
                         {dev.services.length>0&&<div className="flex flex-wrap gap-1 mb-2.5">{dev.services.map((s,i)=><span key={i} className="text-[9px] font-mono px-1.5 py-0.5 rounded tracking-wider" style={{background:`${dev.color}06`,color:`${dev.color}70`}}>{s}</span>)}</div>}
 
                         {/* GATT Dump */}
-                        {dev.gattDump.length>0&&<div className="mb-2.5"><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-[0.15em] mb-1 font-bold">VACUUM DUMP ({dev.gattDump.length})</div><div className="max-h-[120px] overflow-y-auto styled-scrollbar rounded-lg" style={{background:'rgba(0,0,0,0.3)'}}>
+                        {dev.gattDump.length>0&&<div className="mb-2.5"><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-[0.15em] mb-1 font-bold">{t('VACUUM DUMP')} ({dev.gattDump.length})</div><div className="max-h-[120px] overflow-y-auto styled-scrollbar rounded-lg" style={{background:'rgba(0,0,0,0.3)'}}>
                           {dev.gattDump.map((g,i)=><div key={i} className="px-2 py-1 flex items-start gap-1.5 hover:bg-white/[0.02]" style={{borderBottom:'1px solid rgba(255,255,255,0.02)'}}><span className="text-[9px] font-mono text-[var(--text-muted)] shrink-0 w-[50px] truncate">{g.svc}</span><span className="text-[9px] font-mono shrink-0 w-[50px] truncate" style={{color:dev.color}}>{g.char}</span><span className="text-[9px] font-mono text-[var(--text-primary)] flex-1 truncate">{g.value}</span></div>)}
                         </div></div>}
 
@@ -447,17 +453,17 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
                         <div className="flex gap-1.5 flex-wrap">
                           {dev.bt&&(dev.connected?(<>
                             <motion.button whileTap={{scale:0.95}} onClick={()=>explore(dev)} className="flex-1 py-1.5 rounded-lg text-[9px] font-mono font-bold tracking-wider flex items-center justify-center gap-1.5" style={{background:`${dev.color}08`,color:dev.color,border:`1px solid ${dev.color}10`}}><Layers className="w-3 h-3"/>GATT</motion.button>
-                            <motion.button whileTap={{scale:0.95}} onClick={()=>disconnect(dev)} className="py-1.5 px-2.5 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1" style={{background:'rgba(255,61,61,0.05)',color:'#FF6B6B',border:'1px solid rgba(255,61,61,0.06)'}}><Unplug className="w-3 h-3"/>DROP</motion.button>
+                            <motion.button whileTap={{scale:0.95}} onClick={()=>disconnect(dev)} className="py-1.5 px-2.5 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1" style={{background:'rgba(255,61,61,0.05)',color:'#FF6B6B',border:'1px solid rgba(255,61,61,0.06)'}}><Unplug className="w-3 h-3"/>{t('DROP')}</motion.button>
                           </>):(<>
-                            <motion.button whileTap={{scale:0.95}} onClick={()=>connect(dev)} disabled={!!connecting} className="flex-1 py-2 rounded-lg text-[9px] font-mono font-bold tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-30" style={{background:`${dev.color}08`,color:dev.color,border:`1px solid ${dev.color}10`}}><Zap className="w-3 h-3"/>{isC?'PAIRING...':'CONNECT'}</motion.button>
+                            <motion.button whileTap={{scale:0.95}} onClick={()=>connect(dev)} disabled={!!connecting} className="flex-1 py-2 rounded-lg text-[9px] font-mono font-bold tracking-wider flex items-center justify-center gap-1.5 disabled:opacity-30" style={{background:`${dev.color}08`,color:dev.color,border:`1px solid ${dev.color}10`}}><Zap className="w-3 h-3"/>{isC?t('PAIRING...'):t('CONNECT')}</motion.button>
                           </>))}
-                          {dev.geo&&<motion.button whileTap={{scale:0.95}} onClick={()=>placeSingleOnMap(dev)} className="py-1.5 px-2.5 rounded-lg text-[9px] font-mono font-bold tracking-wider flex items-center gap-1" style={{background:'rgba(255,183,77,0.06)',color:'#FFB74D',border:'1px solid rgba(255,183,77,0.08)'}}><MapPin className="w-3 h-3"/>VIEW ON MAP</motion.button>}
+                          {dev.geo&&<motion.button whileTap={{scale:0.95}} onClick={()=>placeSingleOnMap(dev)} className="py-1.5 px-2.5 rounded-lg text-[9px] font-mono font-bold tracking-wider flex items-center gap-1" style={{background:'rgba(255,183,77,0.06)',color:'#FFB74D',border:'1px solid rgba(255,183,77,0.08)'}}><MapPin className="w-3 h-3"/>{t('VIEW ON MAP')}</motion.button>}
                         </div>
 
                         {/* GATT Explorer */}
                         <AnimatePresence>{isG&&(<motion.div initial={{height:0,opacity:0}} animate={{height:'auto',opacity:1}} exit={{height:0,opacity:0}} className="overflow-hidden"><div className="mt-2.5 pt-2.5" style={{borderTop:`1px solid ${dev.color}08`}}>
-                          <div className="flex items-center justify-between mb-2"><span className="text-[9px] font-mono font-bold tracking-[0.12em]" style={{color:dev.color}}>GATT TREE</span><button onClick={()=>{setGattTarget(null);setGattSvcs([]);}}><X className="w-2.5 h-2.5 text-[var(--text-muted)]"/></button></div>
-                          {gattLoading?<div className="flex items-center justify-center py-3 gap-1.5"><div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{borderColor:dev.color,borderTopColor:'transparent'}}/><span className="text-[9px] font-mono animate-pulse" style={{color:dev.color}}>Enumerating...</span></div>
+                          <div className="flex items-center justify-between mb-2"><span className="text-[9px] font-mono font-bold tracking-[0.12em]" style={{color:dev.color}}>{t('GATT TREE')}</span><button onClick={()=>{setGattTarget(null);setGattSvcs([]);}}><X className="w-2.5 h-2.5 text-[var(--text-muted)]"/></button></div>
+                          {gattLoading?<div className="flex items-center justify-center py-3 gap-1.5"><div className="w-3.5 h-3.5 border-2 rounded-full animate-spin" style={{borderColor:dev.color,borderTopColor:'transparent'}}/><span className="text-[9px] font-mono animate-pulse" style={{color:dev.color}}>{t('Enumerating...')}</span></div>
                           :gattSvcs.map(svc=>(<div key={svc.uuid} className="mb-0.5">
                             <button onClick={()=>setExSvc(exSvc===svc.uuid?null:svc.uuid)} className="w-full px-2 py-1.5 rounded-lg flex items-center gap-1.5 text-left hover:bg-white/[0.02]">
                               <Bluetooth className="w-2.5 h-2.5 shrink-0" style={{color:dev.color}}/><span className="text-[9px] font-mono font-bold text-[var(--text-primary)] truncate flex-1">{svc.name}</span><span className="text-[9px] font-mono" style={{color:`${dev.color}80`}}>{svc.chars.length}</span><ChevronRight className={`w-2.5 h-2.5 text-[var(--text-muted)] transition-transform ${exSvc===svc.uuid?'rotate-90':''}`}/>
@@ -467,9 +473,9 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
                                 <div className="flex items-center gap-1 mb-1"><span className="text-[9px] font-mono font-bold text-[var(--text-primary)] truncate flex-1">{ch.name}</span><span className="text-[9px] font-mono px-1 py-0.5 rounded" style={{background:`${dev.color}06`,color:`${dev.color}80`}}>{fl}</span></div>
                                 {ch.value&&<div className="flex items-center gap-1 mb-1"><div className="flex-1 rounded px-1.5 py-1 min-w-0" style={{background:'rgba(0,0,0,0.3)'}}><div className={`text-[9px] font-mono truncate ${ch.notifying?'text-[#00FF88]':'text-[var(--alert-green)]'}`}>{ch.value}</div>{ch.hex&&ch.hex!==ch.value&&<div className="text-[9px] font-mono text-[var(--text-muted)] truncate mt-0.5 opacity-40">{ch.hex}</div>}</div><button onClick={()=>{navigator.clipboard?.writeText(ch.value||'');setCopied(ck);setTimeout(()=>setCopied(null),1500);}} className="p-0.5 rounded hover:bg-white/5 shrink-0">{copied===ck?<Check className="w-2 h-2 text-[var(--alert-green)]"/>:<Copy className="w-2 h-2 text-[var(--text-muted)]"/>}</button></div>}
                                 <div className="flex items-center gap-1 flex-wrap">
-                                  {ch.p.r&&<button onClick={async()=>{if(!ch.char)return;try{const v=await ch.char.readValue();const d=decode(v);setGattSvcs(sv=>sv.map(s=>s.uuid===svc.uuid?{...s,chars:s.chars.map(c=>c.uuid===ch.uuid?{...c,value:d.text,hex:d.hex}:c)}:s));log('READ',dev.name,`${ch.name}: ${d.text.slice(0,50)}`,d.hex,v.byteLength);}catch{log('ERROR',dev.name,`Read: ${ch.name}`);}}} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-mono" style={{background:`${dev.color}06`,color:dev.color}}><Eye className="w-2 h-2"/>READ</button>}
-                                  {ch.p.n&&<button onClick={()=>toggleN(svc.uuid,ch,dev.name)} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-mono" style={{background:ch.notifying?'rgba(0,255,136,0.06)':'rgba(255,255,255,0.02)',color:ch.notifying?'#00FF88':'var(--text-muted)'}}>{ch.notifying?<Bell className="w-2 h-2"/>:<BellOff className="w-2 h-2"/>}{ch.notifying?'LIVE':'SUB'}</button>}
-                                  {(ch.p.w||ch.p.wn)&&<div className="flex items-center gap-0.5 flex-1"><input type="text" placeholder="FF 01" value={wV} onChange={e=>setWIn(iv=>({...iv,[ck]:e.target.value}))} className="flex-1 rounded px-1.5 py-0.5 text-[9px] font-mono text-[var(--text-primary)] outline-none min-w-0" style={{background:'rgba(0,0,0,0.3)',border:`1px solid ${wOk?'transparent':'rgba(255,61,61,0.3)'}`}}/><button onClick={async()=>{if(!ch.char||!wV||!validHex(wV))return;try{await writeSafe(ch.char,parseHex(wV),ch.p.w);log('WRITE',dev.name,`${ch.name} ← ${wV}`);setWIn(iv=>({...iv,[ck]:''}));}catch{log('ERROR',dev.name,`Write: ${ch.name}`);}}} disabled={!wV||!wOk} className="p-0.5 rounded shrink-0 disabled:opacity-30" style={{color:'#FFB800'}}><Send className="w-2 h-2"/></button></div>}
+                                  {ch.p.r&&<button onClick={async()=>{if(!ch.char)return;try{const v=await ch.char.readValue();const d=decode(v);setGattSvcs(sv=>sv.map(s=>s.uuid===svc.uuid?{...s,chars:s.chars.map(c=>c.uuid===ch.uuid?{...c,value:d.text,hex:d.hex}:c)}:s));log('READ',dev.name,`${ch.name}: ${d.text.slice(0,50)}`,d.hex,v.byteLength);}catch{log('ERROR',dev.name,`${t('Read')}: ${ch.name}`);}}} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-mono" style={{background:`${dev.color}06`,color:dev.color}}><Eye className="w-2 h-2"/>{t('READ')}</button>}
+                                  {ch.p.n&&<button onClick={()=>toggleN(svc.uuid,ch,dev.name)} className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[9px] font-mono" style={{background:ch.notifying?'rgba(0,255,136,0.06)':'rgba(255,255,255,0.02)',color:ch.notifying?'#00FF88':'var(--text-muted)'}}>{ch.notifying?<Bell className="w-2 h-2"/>:<BellOff className="w-2 h-2"/>}{ch.notifying?t('LIVE'):t('SUB')}</button>}
+                                  {(ch.p.w||ch.p.wn)&&<div className="flex items-center gap-0.5 flex-1"><input type="text" placeholder="FF 01" value={wV} onChange={e=>setWIn(iv=>({...iv,[ck]:e.target.value}))} className="flex-1 rounded px-1.5 py-0.5 text-[9px] font-mono text-[var(--text-primary)] outline-none min-w-0" style={{background:'rgba(0,0,0,0.3)',border:`1px solid ${wOk?'transparent':'rgba(255,61,61,0.3)'}`}}/><button onClick={async()=>{if(!ch.char||!wV||!validHex(wV))return;try{await writeSafe(ch.char,parseHex(wV),ch.p.w);log('WRITE',dev.name,`${ch.name} ← ${wV}`);setWIn(iv=>({...iv,[ck]:''}));}catch{log('ERROR',dev.name,`${t('Write')}: ${ch.name}`);}}} disabled={!wV||!wOk} className="p-0.5 rounded shrink-0 disabled:opacity-30" style={{color:'#FFB800'}}><Send className="w-2 h-2"/></button></div>}
                                 </div>
                               </div>);})}</div></motion.div>)}</AnimatePresence>
                           </div>))}
@@ -487,25 +493,25 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
                 {/* Network Recon */}
                 <div className="rounded-xl overflow-hidden" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.04)'}}>
                   <div className="px-3 py-2 flex items-center justify-between" style={{borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
-                    <div className="flex items-center gap-1.5"><Globe className="w-3 h-3 text-[#80DEEA]"/><span className="text-[9px] font-mono font-bold tracking-[0.12em] text-[var(--text-primary)]">NETWORK RECON</span></div>
-                    <motion.button whileTap={{scale:0.95}} onClick={runNetRecon} disabled={netLoading} className="px-2 py-0.5 rounded text-[9px] font-mono font-bold tracking-wider disabled:opacity-30" style={{background:'rgba(128,222,234,0.06)',color:'#80DEEA',border:'1px solid rgba(128,222,234,0.08)'}}>{netLoading?'...':'PROBE'}</motion.button>
+                    <div className="flex items-center gap-1.5"><Globe className="w-3 h-3 text-[#80DEEA]"/><span className="text-[9px] font-mono font-bold tracking-[0.12em] text-[var(--text-primary)]">{t('NETWORK RECON')}</span></div>
+                    <motion.button whileTap={{scale:0.95}} onClick={runNetRecon} disabled={netLoading} className="px-2 py-0.5 rounded text-[9px] font-mono font-bold tracking-wider disabled:opacity-30" style={{background:'rgba(128,222,234,0.06)',color:'#80DEEA',border:'1px solid rgba(128,222,234,0.08)'}}>{netLoading?'...':t('PROBE')}</motion.button>
                   </div>
-                  {!netIntel&&<div className="px-3 py-4 text-center"><span className="text-[9px] font-mono text-[var(--text-muted)] opacity-30">Tap PROBE to scan local network</span></div>}
+                  {!netIntel&&<div className="px-3 py-4 text-center"><span className="text-[9px] font-mono text-[var(--text-muted)] opacity-30">{t('Tap PROBE to scan local network')}</span></div>}
                   {netIntel&&<div className="p-2.5 space-y-2">
-                    {netIntel.localIPs.length>0&&<div><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider mb-1 font-bold">LOCAL IPs</div>{netIntel.localIPs.map((ip,i)=><div key={i} className="text-[10px] font-mono text-[#80DEEA] pl-2">{ip}</div>)}</div>}
-                    {netIntel.type&&<div className="flex gap-3">{[{l:'TYPE',v:netIntel.type},{l:'DOWN',v:netIntel.downlink!=null?`${netIntel.downlink}Mbps`:undefined},{l:'RTT',v:netIntel.rtt!=null?`${netIntel.rtt}ms`:undefined}].filter(x=>x.v).map(x=><div key={x.l}><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">{x.l}</div><div className="text-[10px] font-mono text-[var(--text-primary)] font-bold">{x.v}</div></div>)}</div>}
-                    {netIntel.openPorts.length>0&&<div><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider mb-1 font-bold">OPEN PORTS</div>{netIntel.openPorts.map((p,i)=><div key={i} className="flex items-center gap-2 pl-2 py-0.5"><span className="text-[9px] font-mono font-bold text-[var(--alert-green)]">:{p.port}</span><span className="text-[9px] font-mono text-[var(--text-muted)]">{p.service}</span></div>)}</div>}
+                    {netIntel.localIPs.length>0&&<div><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider mb-1 font-bold">{t('LOCAL IPs')}</div>{netIntel.localIPs.map((ip,i)=><div key={i} className="text-[10px] font-mono text-[#80DEEA] pl-2">{ip}</div>)}</div>}
+                    {netIntel.type&&<div className="flex gap-3">{[{l:'TYPE',v:netIntel.type},{l:'DOWN',v:netIntel.downlink!=null?`${netIntel.downlink}Mbps`:undefined},{l:'RTT',v:netIntel.rtt!=null?`${netIntel.rtt}ms`:undefined}].filter(x=>x.v).map(x=><div key={x.l}><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">{t(x.l)}</div><div className="text-[10px] font-mono text-[var(--text-primary)] font-bold">{x.v}</div></div>)}</div>}
+                    {netIntel.openPorts.length>0&&<div><div className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider mb-1 font-bold">{t('OPEN PORTS')}</div>{netIntel.openPorts.map((p,i)=><div key={i} className="flex items-center gap-2 pl-2 py-0.5"><span className="text-[9px] font-mono font-bold text-[var(--alert-green)]">:{p.port}</span><span className="text-[9px] font-mono text-[var(--text-muted)]">{p.service}</span></div>)}</div>}
                   </div>}
                 </div>
                 {/* Export */}
                 <div className="rounded-xl overflow-hidden" style={{background:'rgba(255,255,255,0.015)',border:'1px solid rgba(255,255,255,0.04)'}}>
-                  <div className="px-3 py-2 flex items-center gap-1.5" style={{borderBottom:'1px solid rgba(255,255,255,0.03)'}}><Database className="w-3 h-3 text-[#FFB800]"/><span className="text-[9px] font-mono font-bold tracking-[0.12em] text-[var(--text-primary)]">VAULT & EXPORT</span></div>
+                  <div className="px-3 py-2 flex items-center gap-1.5" style={{borderBottom:'1px solid rgba(255,255,255,0.03)'}}><Database className="w-3 h-3 text-[#FFB800]"/><span className="text-[9px] font-mono font-bold tracking-[0.12em] text-[var(--text-primary)]">{t('VAULT & EXPORT')}</span></div>
                   <div className="p-2.5 space-y-1.5">
-                    <div className="text-[9px] font-mono text-[var(--text-muted)]">{vaultCount} device{vaultCount!==1?'s':''} · {bytes>1024?`${(bytes/1024).toFixed(1)}KB`:`${bytes}B`}</div>
+                    <div className="text-[9px] font-mono text-[var(--text-muted)]">{vaultCount} {t(vaultCount!==1?'devices':'device')} · {bytes>1024?`${(bytes/1024).toFixed(1)}KB`:`${bytes}B`}</div>
                     <div className="flex gap-1.5">
                       <motion.button whileTap={{scale:0.95}} onClick={exportJSON} disabled={devices.length===0} className="flex-1 py-1.5 rounded-lg text-[9px] font-mono font-bold tracking-wider flex items-center justify-center gap-1 disabled:opacity-30" style={{background:'rgba(255,184,0,0.06)',color:'#FFB800',border:'1px solid rgba(255,184,0,0.08)'}}><Download className="w-2.5 h-2.5"/>JSON</motion.button>
                       <motion.button whileTap={{scale:0.95}} onClick={exportCSV} disabled={devices.length===0} className="flex-1 py-1.5 rounded-lg text-[9px] font-mono font-bold tracking-wider flex items-center justify-center gap-1 disabled:opacity-30" style={{background:'rgba(0,255,136,0.06)',color:'#00FF88',border:'1px solid rgba(0,255,136,0.08)'}}><Download className="w-2.5 h-2.5"/>CSV</motion.button>
-                      <motion.button whileTap={{scale:0.95}} onClick={async()=>{await vaultClear();setVaultCount(0);log('INFO','VAULT','Vault cleared');}} className="py-1.5 px-2.5 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1" style={{background:'rgba(255,61,61,0.04)',color:'#FF6B6B',border:'1px solid rgba(255,61,61,0.06)'}}><Trash2 className="w-2.5 h-2.5"/>WIPE</motion.button>
+                      <motion.button whileTap={{scale:0.95}} onClick={async()=>{await vaultClear();setVaultCount(0);log('INFO','VAULT',t('Vault cleared'));}} className="py-1.5 px-2.5 rounded-lg text-[9px] font-mono font-bold flex items-center gap-1" style={{background:'rgba(255,61,61,0.04)',color:'#FF6B6B',border:'1px solid rgba(255,61,61,0.06)'}}><Trash2 className="w-2.5 h-2.5"/>{t('WIPE')}</motion.button>
                     </div>
                   </div>
                 </div>
@@ -516,14 +522,14 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
             {view==='log'&&(
               <div className="flex-1 flex flex-col overflow-hidden">
                 <div className="flex items-center justify-between px-3 py-1 shrink-0" style={{background:'rgba(0,0,0,0.3)',borderBottom:'1px solid rgba(255,255,255,0.03)'}}>
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">{pkts.length} pkts · {bytes>1024?`${(bytes/1024).toFixed(1)}KB`:`${bytes}B`}</span>
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">{pkts.length} {t('pkts')} · {bytes>1024?`${(bytes/1024).toFixed(1)}KB`:`${bytes}B`}</span>
                   <div className="flex items-center gap-1.5">
-                    <button onClick={()=>setPaused(!paused)} className={`text-[9px] font-mono tracking-wider px-1 py-0.5 rounded flex items-center gap-0.5 ${paused?'text-[#FFB800]':'text-[var(--text-muted)]'}`}>{paused?<><Pause className="w-2 h-2"/>PAUSE</>:<><Play className="w-2 h-2"/>LIVE</>}</button>
-                    <button onClick={()=>{setPkts([]);setBytes(0);pid.current=0;}} className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider px-1 py-0.5 rounded hover:bg-white/5 flex items-center gap-0.5"><Trash2 className="w-2 h-2"/>CLR</button>
+                    <button onClick={()=>setPaused(!paused)} className={`text-[9px] font-mono tracking-wider px-1 py-0.5 rounded flex items-center gap-0.5 ${paused?'text-[#FFB800]':'text-[var(--text-muted)]'}`}>{paused?<><Pause className="w-2 h-2"/>{t('PAUSE')}</>:<><Play className="w-2 h-2"/>{t('LIVE')}</>}</button>
+                    <button onClick={()=>{setPkts([]);setBytes(0);pid.current=0;}} className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider px-1 py-0.5 rounded hover:bg-white/5 flex items-center gap-0.5"><Trash2 className="w-2 h-2"/>{t('CLR')}</button>
                   </div>
                 </div>
                 <div ref={logEl} className="flex-1 overflow-y-auto styled-scrollbar font-mono" style={{background:'#020406'}}>
-                  {pkts.length===0?<div className="flex items-center justify-center h-full opacity-15"><span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">Scan to see packets...</span></div>
+                  {pkts.length===0?<div className="flex items-center justify-center h-full opacity-15"><span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">{t('Scan to see packets...')}</span></div>
                   :<div className="py-0.5">{pkts.map(p=>{const oc=OP_CLR[p.op]||'#90A4AE';return(<div key={p.id} className="px-2 py-[2px] flex items-start hover:bg-white/[0.015] border-b border-white/[0.01] group" style={{fontSize:10,lineHeight:'16px'}}><span className="text-white/8 shrink-0 w-[24px] tabular-nums text-right pr-1.5">{p.id}</span><span className="text-[var(--text-muted)]/30 shrink-0 w-[58px] tabular-nums">{fts(p.ts)}</span><span className="shrink-0 font-bold tracking-wider w-[44px]" style={{color:oc}}>{p.op}</span><span className="text-[var(--cyan-primary)]/40 shrink-0 truncate w-[55px]">{p.src}</span><span className="text-[var(--text-secondary)] flex-1 truncate">{p.msg}</span>{p.len!=null&&<span className="text-[var(--text-muted)]/12 ml-1 shrink-0 tabular-nums">{p.len}B</span>}</div>);})}</div>}
                 </div>
               </div>
@@ -532,7 +538,7 @@ export default function WorldRemote({onClose,onPlaceOnMap}:{onClose?:()=>void,on
 
           {/* Footer */}
           <div className="flex items-center justify-between px-3 py-1.5 shrink-0" style={{borderTop:'1px solid rgba(255,255,255,0.03)',background:'rgba(0,0,0,0.2)'}}>
-            <div className="flex items-center gap-1.5"><div className={`w-1.5 h-1.5 rounded-full ${btOk?'bg-[var(--alert-green)]':'bg-[#FF3D3D]'} ${scanning?'animate-pulse':''}`}/><span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">{scanning?'SCANNING':liveCount>0?`${liveCount} LIVE`:'STANDBY'} · {upStr}</span></div>
+            <div className="flex items-center gap-1.5"><div className={`w-1.5 h-1.5 rounded-full ${btOk?'bg-[var(--alert-green)]':'bg-[#FF3D3D]'} ${scanning?'animate-pulse':''}`}/><span className="text-[9px] font-mono text-[var(--text-muted)] tracking-wider">{scanning?t('SCANNING'):liveCount>0?`${liveCount} ${t('LIVE')}`:t('STANDBY')} · {upStr}</span></div>
             <span className="text-[9px] font-mono text-[var(--text-muted)]/15 tracking-[0.2em]">MARAUDER V8</span>
           </div>
         </motion.div>

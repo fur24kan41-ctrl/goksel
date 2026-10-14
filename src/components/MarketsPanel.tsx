@@ -18,6 +18,7 @@ import {
   WATCHLIST_KEY,
   type FunctionCode, type MarketQuote as Quote, type SortKey, type Suggestion,
 } from '@/lib/markets';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * OSIRIS — the markets terminal.
@@ -127,28 +128,29 @@ function SecurityTable({ groups, selected, watchlist, sort, onSort, onOpen, onSt
   onStar: (symbol: string) => void;
   now: number;
 }) {
+  const { t } = useI18n();
   return (
     <div className="@container">
       <table className="w-full border-collapse font-mono text-[11px] tabular-nums">
         <thead className="sticky top-0 z-10 bg-[var(--bg-panel-solid)]">
           <tr className="text-[9px] tracking-wider text-left border-b border-[var(--border-secondary)] text-[var(--text-muted)]">
-            <th scope="col" className="w-5 font-normal"><span className="sr-only">Watch</span></th>
-            <SortHeader label="SECURITY" k="name" sort={sort} onSort={onSort} className="py-1.5" />
-            <th scope="col" className="font-normal text-right pr-2">LAST</th>
-            <th scope="col" className="font-normal text-right pr-2 hidden @2xl:table-cell">NET</th>
-            <SortHeader label="%CHG" k="move" sort={sort} onSort={onSort} className="text-right pr-2" />
-            <SortHeader label="1M" k="month" sort={sort} onSort={onSort} className="text-right pr-1 hidden @min-[20rem]:table-cell" />
-            <th scope="col" className="font-normal text-center px-2 hidden @2xl:table-cell">DAY RANGE</th>
-            <th scope="col" className="font-normal text-center px-2 hidden @3xl:table-cell">52W</th>
-            <th scope="col" className="font-normal text-right pl-3 pr-2 hidden @4xl:table-cell">VOLUME</th>
-            <th scope="col" className="font-normal text-right pl-3 pr-1 hidden @3xl:table-cell">TIME</th>
+            <th scope="col" className="w-5 font-normal"><span className="sr-only">{t('Watchlist')}</span></th>
+            <SortHeader label={t('SECURITY')} k="name" sort={sort} onSort={onSort} className="py-1.5" />
+            <th scope="col" className="font-normal text-right pr-2">{t('LAST')}</th>
+            <th scope="col" className="font-normal text-right pr-2 hidden @2xl:table-cell">{t('NET')}</th>
+            <SortHeader label={t('%CHG')} k="move" sort={sort} onSort={onSort} className="text-right pr-2" />
+            <SortHeader label={t('1M')} k="month" sort={sort} onSort={onSort} className="text-right pr-1 hidden @min-[20rem]:table-cell" />
+            <th scope="col" className="font-normal text-center px-2 hidden @2xl:table-cell">{t('DAY RANGE')}</th>
+            <th scope="col" className="font-normal text-center px-2 hidden @3xl:table-cell">{t('52W')}</th>
+            <th scope="col" className="font-normal text-right pl-3 pr-2 hidden @4xl:table-cell">{t('VOLUME')}</th>
+            <th scope="col" className="font-normal text-right pl-3 pr-1 hidden @3xl:table-cell">{t('TIME')}</th>
           </tr>
         </thead>
         {groups.map((g, gi) => (
           <tbody key={g.label ?? gi}>
             {g.label && (
               <tr>
-                <td colSpan={10} className="pt-2.5 pb-1 pl-1 text-[9px] tracking-[0.2em]" style={{ color: T.accent }}>{g.label}</td>
+                <td colSpan={10} className="pt-2.5 pb-1 pl-1 text-[9px] tracking-[0.2em]" style={{ color: T.accent }}>{t(g.label)}</td>
               </tr>
             )}
             {g.rows.map(q => {
@@ -166,7 +168,7 @@ function SecurityTable({ groups, selected, watchlist, sort, onSort, onOpen, onSt
                   <td className="w-5 text-center">
                     <button
                       onClick={e => { e.stopPropagation(); onStar(q.symbol); }}
-                      aria-label={starred ? `Remove ${q.name} from watchlist` : `Add ${q.name} to watchlist`}
+                      aria-label={starred ? `${t('Remove')} ${q.name} ${t('from watchlist')}` : `${t('Add')} ${q.name} ${t('to watchlist')}`}
                       aria-pressed={starred}
                       className="p-0.5 align-middle"
                     >
@@ -186,17 +188,17 @@ function SecurityTable({ groups, selected, watchlist, sort, onSort, onOpen, onSt
                   <td className="text-right pr-2 whitespace-nowrap" style={{ color: T.text }}>{formatPrice(q)}</td>
                   <td className="text-right pr-2 whitespace-nowrap hidden @2xl:table-cell" style={{ color: moveColor(net) }}>{formatNet(q, net)}</td>
                   <td className="text-right pr-2 whitespace-nowrap font-bold" style={{ color: moveColor(q.change_percent) }}>{formatMove(q.change_percent)}</td>
-                  <td className="text-right pr-1 whitespace-nowrap hidden @min-[20rem]:table-cell" title={`One month ${formatMove(month)}`}><Spark points={q.spark} /></td>
+                  <td className="text-right pr-1 whitespace-nowrap hidden @min-[20rem]:table-cell" title={`${t('One month')} ${formatMove(month)}`}><Spark points={q.spark} /></td>
                   <td className="text-center px-2 hidden @2xl:table-cell">
                     <RangeBar
                       pos={rangePosition(q.price, q.day_low, q.day_high)}
-                      title={q.day_low != null && q.day_high != null ? `Day ${formatPrice(q, q.day_low)} – ${formatPrice(q, q.day_high)}` : 'No day range'}
+                      title={q.day_low != null && q.day_high != null ? `${t('Day')} ${formatPrice(q, q.day_low)} – ${formatPrice(q, q.day_high)}` : t('No day range')}
                     />
                   </td>
                   <td className="text-center px-2 hidden @3xl:table-cell">
                     <RangeBar
                       pos={rangePosition(q.price, q.low_52w, q.high_52w)}
-                      title={q.low_52w != null && q.high_52w != null ? `52 weeks ${formatPrice(q, q.low_52w)} – ${formatPrice(q, q.high_52w)}` : 'No 52-week range'}
+                      title={q.low_52w != null && q.high_52w != null ? `${t('52 weeks')} ${formatPrice(q, q.low_52w)} – ${formatPrice(q, q.high_52w)}` : t('No 52-week range')}
                     />
                   </td>
                   <td className="text-right pl-3 pr-2 hidden @4xl:table-cell" style={{ color: T.dim }}>{formatVolume(q.volume)}</td>
@@ -212,6 +214,7 @@ function SecurityTable({ groups, selected, watchlist, sort, onSort, onOpen, onSt
 }
 
 export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) {
+  const { t } = useI18n();
   const [expanded, setExpanded] = useState(true);
   const [maximized, setMaximized] = useState(false);
   /** Starred symbols, kept in this browser only. */
@@ -264,8 +267,8 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
 
   useEffect(() => {
     if (!miss) return;
-    const t = setTimeout(() => setMiss(null), 2600);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => setMiss(null), 2600);
+    return () => clearTimeout(timer);
   }, [miss]);
 
   const star = useCallback((symbol: string) => {
@@ -343,18 +346,18 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
   /* ── The pieces, shared by both layouts ───────────────────── */
 
   const feedStatus = (
-    <span className="text-[9px] font-mono tracking-wider tabular-nums whitespace-nowrap" style={{ color: T.faint }} title="When the feed was last built, UTC">
-      UPD {updated}Z
+    <span className="text-[9px] font-mono tracking-wider tabular-nums whitespace-nowrap" style={{ color: T.faint }} title={t('When the feed was last built, UTC')}>
+      {t('UPD')} {updated}Z
     </span>
   );
 
   const clocks = (
-    <div className="hidden xl:flex items-center gap-3 text-[10px] font-mono tabular-nums" title="Regular sessions, local time. Holidays and early closes are not shown.">
+    <div className="hidden xl:flex items-center gap-3 text-[10px] font-mono tabular-nums" title={t('Regular sessions, local time. Holidays and early closes are not shown.')}>
       {exchangeClocks(new Date(now)).map(c => (
         <span key={c.code} className="flex items-center gap-1">
           <span style={{ color: T.faint }}>{c.code}</span>
           <span style={{ color: T.dim }}>{c.time}</span>
-          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.open ? T.up : T.faint, opacity: c.open ? 1 : 0.5 }} title={c.open ? 'Open' : 'Closed'} />
+          <span className="w-1.5 h-1.5 rounded-full" style={{ background: c.open ? T.up : T.faint, opacity: c.open ? 1 : 0.5 }} title={c.open ? t('Open') : t('Closed')} />
         </span>
       ))}
     </div>
@@ -372,8 +375,8 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
             else if (e.key === 'ArrowUp' && suggestions.length) { e.preventDefault(); setPick(p => (p <= 0 ? suggestions.length - 1 : p - 1)); }
             else if (e.key === 'Escape' && command) { e.preventDefault(); setCommand(''); setPick(-1); }
           }}
-          placeholder={miss ? `No match for ${miss}` : 'Ticker or function · LMT · gold · FX · help'}
-          aria-label="Markets command: a ticker or function code"
+          placeholder={miss ? `${t('No match for')} ${miss}` : t('Ticker or function · LMT · gold · FX · help')}
+          aria-label={t('Markets command: a ticker or function code')}
           aria-autocomplete="list"
           autoComplete="off"
           spellCheck={false}
@@ -387,7 +390,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
         type="submit"
         className="px-3 rounded-lg text-[10px] font-mono font-bold tracking-wider border border-[var(--border-active)] bg-[var(--hover-accent)] text-[var(--gold-primary)] hover:bg-[rgba(var(--gold-rgb),0.16)] transition-colors"
       >
-        GO
+        {t('GO')}
       </button>
       {suggestions.length > 0 && (
         <ul className="absolute left-0 right-0 top-full mt-1 z-30 rounded-lg border border-[var(--border-primary)] bg-[var(--bg-panel-solid)] shadow-xl overflow-hidden text-[10px] font-mono" role="listbox">
@@ -401,8 +404,8 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
                 style={{ background: i === pick ? 'var(--hover-accent)' : undefined }}
               >
                 <span className="w-14 shrink-0 font-bold truncate" style={{ color: s.kind === 'function' ? T.accent : T.text }}>{s.kind === 'function' ? s.label : s.hint}</span>
-                <span className="truncate" style={{ color: T.dim }}>{s.kind === 'function' ? s.hint : s.label}</span>
-                <span className="ml-auto text-[8px] tracking-widest" style={{ color: T.faint }}>{s.kind === 'function' ? 'FUNCTION' : 'SECURITY'}</span>
+                <span className="truncate" style={{ color: T.dim }}>{s.kind === 'function' ? t(s.hint) : s.label}</span>
+                <span className="ml-auto text-[8px] tracking-widest" style={{ color: T.faint }}>{s.kind === 'function' ? t('FUNCTION') : t('SECURITY')}</span>
               </button>
             </li>
           ))}
@@ -421,7 +424,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
             key={f.code}
             onClick={() => setFn(f.code)}
             aria-pressed={active}
-            title={`${f.key} · ${f.code} — ${f.title}`}
+            title={`${f.key} · ${f.code} — ${t(f.title)}`}
             className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md border text-[9px] font-mono tracking-wider transition-colors ${
               active
                 ? 'bg-[var(--hover-accent)] border-[var(--border-active)] text-[var(--gold-primary)]'
@@ -448,12 +451,12 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
             key={symbol}
             onClick={() => q && open(q)}
             disabled={!q}
-            title={q ? `${longName(q)} — chart it` : `${label} — no reading`}
+            title={q ? `${longName(q)} — ${t('chart it')}` : `${t(label)} — ${t('no reading')}`}
             className={`min-w-0 px-2 py-1.5 rounded-md border text-left font-mono transition-colors disabled:opacity-40 ${
               active ? 'border-[var(--border-active)] bg-[var(--hover-accent)]' : 'border-[var(--border-secondary)] bg-white/[0.02] hover:bg-[var(--hover-accent)]'
             }`}
           >
-            <div className="text-[8px] tracking-widest truncate" style={{ color: T.dim }}>{label}</div>
+            <div className="text-[8px] tracking-widest truncate" style={{ color: T.dim }}>{t(label)}</div>
             <div className="text-[11px] font-bold tabular-nums truncate" style={{ color: T.text }}>{q ? formatPrice(q) : '—'}</div>
             <div className="text-[9px] font-bold tabular-nums" style={{ color: moveColor(q?.change_percent) }}>{formatMove(q?.change_percent)}</div>
           </button>
@@ -465,10 +468,10 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
   const breadthCard = breadth && (
     <div className="px-2.5 py-2 rounded-lg border border-[var(--border-secondary)] bg-white/[0.02] font-mono text-[10px] tabular-nums">
       <div className="flex items-center gap-2">
-        <span className="text-[9px] tracking-widest" style={{ color: T.faint }}>BREADTH</span>
+        <span className="text-[9px] tracking-widest" style={{ color: T.faint }}>{t('BREADTH')}</span>
         <span style={{ color: T.up }}>{breadth.up}▲</span>
         <span style={{ color: T.down }}>{breadth.down}▼</span>
-        {breadth.flat > 0 && <span style={{ color: T.dim }}>{breadth.flat} unch</span>}
+        {breadth.flat > 0 && <span style={{ color: T.dim }}>{breadth.flat} {t('unch')}</span>}
         <span className="flex-1 h-1 rounded-full flex overflow-hidden" aria-hidden="true">
           <span style={{ width: `${(breadth.up / breadth.total) * 100}%`, background: T.up }} />
           <span style={{ width: `${(breadth.flat / breadth.total) * 100}%`, background: T.faint }} />
@@ -499,21 +502,21 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
 
   const help = (
     <div className="p-2.5 rounded-lg border border-[var(--border-secondary)] bg-white/[0.02] text-[10px] font-mono leading-relaxed space-y-2" style={{ color: T.dim }}>
-      <div className="text-[9px] tracking-widest" style={{ color: T.accent }}>TYPE A FUNCTION OR A SECURITY, THEN GO</div>
+      <div className="text-[9px] tracking-widest" style={{ color: T.accent }}>{t('TYPE A FUNCTION OR A SECURITY, THEN GO')}</div>
       <table className="w-full">
         <tbody>
           {FUNCTIONS.map(f => (
             <tr key={f.code}>
               <td className="pr-2 w-16 font-bold whitespace-nowrap" style={{ color: T.accent }}>{f.key} · {f.code}</td>
-              <td style={{ color: T.text }}>{f.title}</td>
+              <td style={{ color: T.text }}>{t(f.title)}</td>
               <td className="text-right" style={{ color: T.faint }}>{f.aliases.slice(0, 2).join(' · ')}</td>
             </tr>
           ))}
         </tbody>
       </table>
       <div>
-        Securities by ticker or name: <span style={{ color: T.text }}>LMT</span>, <span style={{ color: T.text }}>lmt us equity</span>, <span style={{ color: T.text }}>gold</span>, <span style={{ color: T.text }}>eurusd</span>, <span style={{ color: T.text }}>nikkei</span>.
-        ↑↓ picks a suggestion, Esc clears, ★ adds a row to WATCH, and a column head sorts.
+        {t('Securities by ticker or name:')} <span style={{ color: T.text }}>LMT</span>, <span style={{ color: T.text }}>lmt us equity</span>, <span style={{ color: T.text }}>gold</span>, <span style={{ color: T.text }}>eurusd</span>, <span style={{ color: T.text }}>nikkei</span>.
+        {' '}{t('↑↓ picks a suggestion, Esc clears, ★ adds a row to WATCH, and a column head sorts.')}
       </div>
     </div>
   );
@@ -523,9 +526,9 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
     : (
       <div className="rounded-lg border border-[var(--border-secondary)] bg-black/20 overflow-hidden">
         <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-[var(--border-secondary)] text-[9px] font-mono tracking-wider">
-          <span style={{ color: T.accent }}>{current?.title.toUpperCase()}</span>
+          <span style={{ color: T.accent }}>{t(current?.title ?? '').toUpperCase()}</span>
           {rowCount > 0 && current?.section !== 'crypto' && (
-            <span style={{ color: T.faint }}>{openCount ? <><span style={{ color: T.up }}>●</span> {openCount} OF {rowCount} TRADING</> : `${rowCount} · SESSIONS CLOSED`}</span>
+            <span style={{ color: T.faint }}>{openCount ? <><span style={{ color: T.up }}>●</span> {openCount} {t('OF')} {rowCount} {t('TRADING')}</> : `${rowCount} · ${t('SESSIONS CLOSED')}`}</span>
           )}
         </div>
         {rowCount > 0 ? (
@@ -534,8 +537,8 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
           </div>
         ) : (
           <div className="py-4 text-center text-[10px] font-mono tracking-wider" style={{ color: T.faint }}>
-            {current?.section === 'watch' ? 'Nothing on watch yet — ★ a row to add it.'
-              : feedLoaded ? 'FEED UNAVAILABLE — RETRYING' : 'LOADING…'}
+            {current?.section === 'watch' ? t('Nothing on watch yet — ★ a row to add it.')
+              : feedLoaded ? t('FEED UNAVAILABLE — RETRYING') : t('LOADING…')}
           </div>
         )}
       </div>
@@ -543,7 +546,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
 
   const heatmap = allQuotes.length > 0 && (
     <div className="p-2.5 rounded-lg border border-[var(--border-secondary)] bg-white/[0.02]">
-      <div className="text-[9px] font-mono tracking-widest pb-1.5" style={{ color: T.faint }}>HEATMAP · TODAY&apos;S MOVE</div>
+      <div className="text-[9px] font-mono tracking-widest pb-1.5" style={{ color: T.faint }}>{t("HEATMAP · TODAY'S MOVE")}</div>
       <div className="space-y-1">
         {FEED_SECTIONS.map(s => {
           const quotes = allQuotes.filter(q => q.group === s);
@@ -577,7 +580,7 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
 
   const movers = breadth && (
     <div className="p-2.5 rounded-lg border border-[var(--border-secondary)] bg-white/[0.02]">
-      <div className="text-[9px] font-mono tracking-widest pb-1.5" style={{ color: T.faint }}>MOVERS · ALL MARKETS</div>
+      <div className="text-[9px] font-mono tracking-widest pb-1.5" style={{ color: T.faint }}>{t('MOVERS · ALL MARKETS')}</div>
       <div className="grid grid-cols-2 gap-3 text-[10px] font-mono tabular-nums">
         {[breadth.best, breadth.worst].map((list, col) => (
           <div key={col}>
@@ -597,11 +600,11 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
     <div className="flex items-center justify-between gap-2 text-[9px] font-mono tracking-wider" style={{ color: T.faint }}>
       {spaceWeather ? (
         <span className="truncate">
-          SPACE WX{' '}
+          {t('SPACE WX')}{' '}
           <span style={{ color: spaceWeather.storm_color || T.text }}>
-            {spaceWeather.kp_index == null ? 'no reading' : `Kp ${spaceWeather.kp_index} — ${spaceWeather.storm_level}`}
+            {spaceWeather.kp_index == null ? t('no reading') : `Kp ${spaceWeather.kp_index} — ${spaceWeather.storm_level}`}
           </span>
-          {spaceWeather.solar_flares?.length > 0 && <> · flare {spaceWeather.solar_flares[0].class}</>}
+          {spaceWeather.solar_flares?.length > 0 && <>{' · '}{t('flare')} {spaceWeather.solar_flares[0].class}</>}
         </span>
       ) : <span />}
       <span className="shrink-0">YAHOO · NOAA</span>
@@ -620,21 +623,21 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
     return createPortal(
       <div className="fixed inset-4 z-[999] flex items-center justify-center">
         <div className="absolute inset-[-1rem] bg-black/60 backdrop-blur-sm" onClick={() => setMaximized(false)} />
-        <div className="relative w-full h-full max-w-[1500px] glass-panel bg-[#0a0a09]/97 backdrop-blur-2xl border border-[var(--gold-primary)]/40 rounded-xl flex flex-col overflow-hidden shadow-2xl" role="region" aria-label="Markets terminal">
+        <div className="relative w-full h-full max-w-[1500px] glass-panel bg-[#0a0a09]/97 backdrop-blur-2xl border border-[var(--gold-primary)]/40 rounded-xl flex flex-col overflow-hidden shadow-2xl" role="region" aria-label={t('Markets terminal')}>
           <div className="flex items-center justify-between gap-4 px-6 py-3.5 border-b border-[var(--border-secondary)] bg-[#111] shrink-0">
             <div className="flex items-center gap-3 min-w-0">
               <BarChart3 className="w-5 h-5 shrink-0" style={{ color: T.accent }} />
-              <span className="hud-text text-[16px] text-[var(--text-primary)] whitespace-nowrap">OSIRIS MARKETS</span>
-              <span className="gotham-tag gotham-tag--classified" style={{ fontSize: '9px' }}>{allQuotes.length} INSTRUMENTS</span>
+              <span className="hud-text text-[16px] text-[var(--text-primary)] whitespace-nowrap">{t('GÖKSEL MARKETS')}</span>
+              <span className="gotham-tag gotham-tag--classified" style={{ fontSize: '9px' }}>{allQuotes.length} {t('INSTRUMENTS')}</span>
               <span className="text-[var(--text-muted)]/40">/</span>
               <span className="text-[11px] font-mono font-bold tracking-wider truncate" style={{ color: T.accent }}>
-                {current ? `${current.code} · ${current.title.toUpperCase()}` : 'HELP'}
+                {current ? `${current.code} · ${t(current.title).toUpperCase()}` : t('HELP')}
               </span>
             </div>
             <div className="flex items-center gap-4 shrink-0">
               {clocks}
               {feedStatus}
-              <button onClick={toggleMax} className="p-2 hover:bg-white/5 rounded transition-colors text-[var(--text-muted)] hover:text-white" title="Exit full screen (Esc)" aria-label="Restore">
+              <button onClick={toggleMax} className="p-2 hover:bg-white/5 rounded transition-colors text-[var(--text-muted)] hover:text-white" title={t('Exit full screen (Esc)')} aria-label={t('Restore')}>
                 <Minimize2 className="w-5 h-5" />
               </button>
             </div>
@@ -673,22 +676,22 @@ export default function MarketsPanel({ data, spaceWeather }: MarketsPanelProps) 
       initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }}
       className="glass-panel relative flex flex-col overflow-hidden pointer-events-auto"
       role="region"
-      aria-label="Markets terminal"
+      aria-label={t('Markets terminal')}
     >
       {/* The same header RECON wears: icon, title, a tag for what is on screen. */}
       <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 border-b border-[rgba(255,255,255,0.05)] bg-[rgba(0,0,0,0.3)] hover:bg-[var(--hover-accent)] transition-colors shrink-0">
         <button onClick={() => setExpanded(e => !e)} className="flex items-center gap-2 min-w-0">
           <BarChart3 className="w-3.5 h-3.5 shrink-0" style={{ color: T.accent }} />
-          <span className="hud-text text-[11px] text-[var(--text-primary)]">MARKETS</span>
-          <span className="gotham-tag gotham-tag--classified truncate" style={{ fontSize: '9px', padding: '1px 5px' }}>{current ? current.code : 'HELP'}</span>
+          <span className="hud-text text-[11px] text-[var(--text-primary)]">{t('MARKETS')}</span>
+          <span className="gotham-tag gotham-tag--classified truncate" style={{ fontSize: '9px', padding: '1px 5px' }}>{current ? current.code : t('HELP')}</span>
         </button>
         <div className="flex items-center gap-2.5 shrink-0">
           {feedStatus}
-          <button onClick={toggleMax} className="p-1.5 -m-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors" title="Full screen" aria-label="Full screen">
+          <button onClick={toggleMax} className="p-1.5 -m-0.5 rounded text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-white/10 transition-colors" title={t('Full screen')} aria-label={t('Full screen')}>
             <Maximize2 className="w-3.5 h-3.5" />
           </button>
           <div className="w-1.5 h-1.5 rounded-full animate-osiris-pulse" style={{ background: markets.error ? T.down : T.accent }} />
-          <button onClick={() => setExpanded(e => !e)} title={expanded ? 'Collapse' : 'Expand'} aria-label={expanded ? 'Collapse' : 'Expand'}>
+          <button onClick={() => setExpanded(e => !e)} title={expanded ? t('Collapse') : t('Expand')} aria-label={expanded ? t('Collapse') : t('Expand')}>
             {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
           </button>
         </div>

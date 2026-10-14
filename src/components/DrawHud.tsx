@@ -3,6 +3,7 @@
 import { Check, X, Undo2, MousePointerClick } from 'lucide-react';
 import type { DrawMode, DrawProgress } from '@/lib/draw';
 import { formatArea, formatDistance } from '@/lib/geo';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * OSIRIS — on-map drawing HUD
@@ -34,28 +35,29 @@ const TITLE: Record<DrawMode, string> = {
 };
 
 /** What to do next, given how far along the shape is. */
-function step(mode: DrawMode, vertices: number): string {
+function step(mode: DrawMode, vertices: number, t: (key: string) => string): string {
   if (vertices === 0) {
-    return {
+    return t({
       polygon: 'Click the first corner of your area',
       rectangle: 'Click one corner of the box',
       circle: 'Click the centre point',
       line: 'Click the start of the path',
-    }[mode];
+    }[mode]);
   }
   switch (mode) {
-    case 'rectangle': return 'Now click the opposite corner';
-    case 'circle': return 'Now click to set the radius';
+    case 'rectangle': return t('Now click the opposite corner');
+    case 'circle': return t('Now click to set the radius');
     case 'polygon':
       return vertices < 3
-        ? `Keep clicking corners — ${3 - vertices} more needed`
-        : 'Click more corners, or finish the area';
+        ? `${t('Keep clicking corners')} — ${3 - vertices} ${t('more needed')}`
+        : t('Click more corners, or finish the area');
     case 'line':
-      return vertices < 2 ? 'Click the next waypoint' : 'Click more waypoints, or finish the path';
+      return vertices < 2 ? t('Click the next waypoint') : t('Click more waypoints, or finish the path');
   }
 }
 
 export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: DrawHudProps) {
+  const { t } = useI18n();
   const vertices = progress?.vertices ?? 0;
   const canFinish = progress?.closable ?? false;
   // Two-click shapes complete themselves, so offering Finish would be a button
@@ -69,13 +71,13 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
           <span className="flex items-center gap-2">
             <span className="h-2 w-2 animate-pulse rounded-full bg-[var(--cyan-primary)]" />
             <span className="text-[11px] font-mono font-bold tracking-[0.2em] text-[var(--cyan-primary)]">
-              {TITLE[mode]}
+              {t(TITLE[mode])}
             </span>
           </span>
 
           <span className="flex items-center gap-1.5 text-[12px] text-[var(--text-primary)]">
             <MousePointerClick className="h-3.5 w-3.5 text-[var(--text-muted)]" />
-            {step(mode, vertices)}
+            {step(mode, vertices, t)}
           </span>
 
           {/* Running measurement — the reason to keep watching the map. */}
@@ -98,7 +100,7 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
             disabled={vertices === 0}
             className="flex items-center gap-1.5 rounded-md border border-[var(--border-secondary)] px-2.5 py-1.5 text-[11px] font-mono text-[var(--text-secondary)] transition-colors hover:bg-white/10 hover:text-white disabled:opacity-30"
           >
-            <Undo2 className="h-3 w-3" /> Undo point
+            <Undo2 className="h-3 w-3" /> {t('Undo point')}
           </button>
 
           {!selfCompleting && (
@@ -112,7 +114,7 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
               }`}
             >
               <Check className="h-3 w-3" />
-              Finish {mode === 'line' ? 'path' : 'area'}
+              {t('Finish')} {mode === 'line' ? t('path') : t('area')}
             </button>
           )}
 
@@ -120,12 +122,12 @@ export default function DrawHud({ mode, progress, onUndo, onFinish, onCancel }: 
             onClick={onCancel}
             className="flex items-center gap-1.5 rounded-md border border-[var(--border-secondary)] px-2.5 py-1.5 text-[11px] font-mono text-[var(--text-secondary)] transition-colors hover:border-[var(--alert-red)]/40 hover:text-[var(--alert-red)]"
           >
-            <X className="h-3 w-3" /> Cancel
+            <X className="h-3 w-3" /> {t('Cancel')}
           </button>
 
           <span className="ml-auto pl-2 text-[10px] font-mono text-[var(--text-muted)]">
-            {vertices} point{vertices === 1 ? '' : 's'}
-            {!selfCompleting && ' · or double-click the map to finish'}
+            {vertices} {vertices === 1 ? t('point') : t('points')}
+            {!selfCompleting && t(' · or double-click the map to finish')}
           </span>
         </div>
       </div>

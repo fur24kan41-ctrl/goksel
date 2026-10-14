@@ -1,6 +1,6 @@
 {
-  "name": "OSIRIS — Global Intelligence Platform",
-  "short_name": "OSIRIS",
+  "name": "GÖKSEL — Global Intelligence Platform",
+  "short_name": "GÖKSEL",
   "description": "Real-time global OSINT intelligence dashboard. Track 10K+ aircraft, 2K satellites, worldwide CCTV, earthquakes, wildfires, nuclear facilities, and more.",
   "start_url": "/",
   "display": "standalone",

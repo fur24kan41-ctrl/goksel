@@ -11,6 +11,7 @@ import AiOverview from './AiOverview';
 import {
   ALERT_KINDS, BLOCS, BLOC_ORDER, buildThreads, groupStatements, timeAgo, type AlertKind, type Bloc, type DigestReport,
 } from '@/lib/alert-digest';
+import { useI18n } from '@/lib/i18n';
 
 interface SourceHealth { handle: string; name: string; lean: string; bloc: Bloc; kind?: 'telegram' | 'wire'; count: number; latest: string | null }
 
@@ -334,6 +335,7 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
   const fresh = now - item.ts < 15 * 60_000;
   const [mediaFailed, setMediaFailed] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
+  const { t } = useI18n();
   const kind = ALERT_KINDS[item.alertKind];
   const video = item.media?.video && !videoFailed ? item.media.video : null;
 
@@ -345,9 +347,9 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
       <button type="button" onClick={onToggle} aria-expanded={open} className="w-full text-left px-2.5 pt-2 pb-2 outline-none focus-visible:ring-1 focus-visible:ring-white/30 rounded-lg">
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9.5px] font-mono uppercase tracking-wider">
-            {fresh && <span className="w-1.5 h-1.5 rounded-full animate-osiris-pulse" style={{ background: ACCENT }} title="Posted in the last 15 minutes" />}
+            {fresh && <span className="w-1.5 h-1.5 rounded-full animate-osiris-pulse" style={{ background: ACCENT }} title={t('Posted in the last 15 minutes')} />}
             <span className="font-semibold text-[#E8E6E0]">{item.source_name}</span>
-            {item.lean && <span style={{ color }} title={item.bloc ? BLOCS[item.bloc].label : undefined}>{item.lean}</span>}
+            {item.lean && <span style={{ color }} title={item.bloc ? t(BLOCS[item.bloc].label) : undefined}>{item.lean}</span>}
           </div>
           <time dateTime={item.published} title={new Date(item.ts).toLocaleString()} className="flex-shrink-0 text-[9.5px] font-mono text-[#8A8880]">
             {timeAgo(item.ts, now)}
@@ -355,7 +357,7 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
         </div>
 
         <h4 className={`mt-1 font-sans text-[12.5px] font-medium leading-snug text-[#F2EFE8] ${open ? '' : 'line-clamp-3'}`}>
-          {item.flag && <span className="mr-1.5 inline-block translate-y-[-1px] rounded bg-[#FF3D3D]/15 px-1 text-[8.5px] font-mono font-bold tracking-wider text-[#FF6B6B]">BREAKING</span>}
+          {item.flag && <span className="mr-1.5 inline-block translate-y-[-1px] rounded bg-[#FF3D3D]/15 px-1 text-[8.5px] font-mono font-bold tracking-wider text-[#FF6B6B]">{t('BREAKING')}</span>}
           {item.title}
         </h4>
         {!open && item.summary && (
@@ -363,35 +365,35 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
         )}
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
-          {item.alertKind !== 'news' && <Chip color={kind.color}>{kind.label}</Chip>}
+          {item.alertKind !== 'news' && <Chip color={kind.color}>{t(kind.label)}</Chip>}
           {item.place && (
-            <Chip color={kind.color} title={`Pinned to ${item.place.label} — the place the post names`}>
+            <Chip color={kind.color} title={`${t('Pinned to')} ${item.place.label} — ${t('the place the post names')}`}>
               <MapPin className="w-2 h-2" /> <span className="max-w-[110px] truncate normal-case">{item.place.name}</span>
             </Chip>
           )}
           {item.media && (
-            <Chip title={item.media.count > 1 ? `${item.media.count} media items` : undefined}>
+            <Chip title={item.media.count > 1 ? `${item.media.count} ${t('media items')}` : undefined}>
               {item.media.kind === 'video' ? <Play className="w-2 h-2" /> : <ImageIcon className="w-2 h-2" />}
-              {item.media.kind === 'video' ? (item.media.duration || 'video') : 'photo'}
+              {item.media.kind === 'video' ? (item.media.duration || t('video')) : t('photo')}
               {item.media.count > 1 && ` +${item.media.count - 1}`}
             </Chip>
           )}
           {item.carriers.length > 0 && (
-            <Chip color="#00E5FF" title={`Also carried by ${item.carriers.map(c => c.source_name).join(', ')}`}>
-              <Layers className="w-2 h-2" /> +{item.carriers.length} channel{item.carriers.length > 1 ? 's' : ''}
+            <Chip color="#00E5FF" title={`${t('Also carried by')} ${item.carriers.map(c => c.source_name).join(', ')}`}>
+              <Layers className="w-2 h-2" /> +{item.carriers.length}{item.carriers.length > 1 ? t('channels') : t('channel')}
             </Chip>
           )}
           {item.forwarded_from && (
-            <Chip title={`Forwarded from ${item.forwarded_from.name}`}>
+            <Chip title={`${t('Forwarded from')} ${item.forwarded_from.name}`}>
               <Repeat2 className="w-2 h-2" /> <span className="max-w-[110px] truncate normal-case">{item.forwarded_from.name}</span>
             </Chip>
           )}
-          {item.reply_to && <Chip><CornerDownRight className="w-2 h-2" /> reply</Chip>}
+          {item.reply_to && <Chip><CornerDownRight className="w-2 h-2" /> {t('reply')}</Chip>}
           {item.keywords.slice(0, 2).map(k => (
-            <Chip key={k} color="#FF9500" title="Matched by the conflict-keyword filter — a word match, not an assessment">{k}</Chip>
+            <Chip key={k} color="#FF9500" title={t('Matched by the conflict-keyword filter — a word match, not an assessment')}>{k}</Chip>
           ))}
           {item.views != null && (
-            <span className="ml-auto inline-flex items-center gap-0.5 text-[8.5px] font-mono text-[#5C5A54]" title={`${item.views.toLocaleString()} views`}>
+            <span className="ml-auto inline-flex items-center gap-0.5 text-[8.5px] font-mono text-[#5C5A54]" title={`${item.views.toLocaleString()} ${t('views')}`}>
               <Eye className="w-2.5 h-2.5" /> {compactCount(item.views)}
             </span>
           )}
@@ -426,7 +428,7 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
               {item.media.kind === 'video' && (
                 <span className="absolute inset-0 flex items-center justify-center bg-black/25">
                   <span className="flex items-center gap-1 rounded-full bg-black/70 px-2.5 py-1 text-[10px] font-mono text-white">
-                    <Play className="w-3 h-3" /> WATCH ON TELEGRAM{item.media.duration ? ` · ${item.media.duration}` : ''}
+                    <Play className="w-3 h-3" /> {t('WATCH ON TELEGRAM')}{item.media.duration ? ` · ${item.media.duration}` : ''}
                   </span>
                 </span>
               )}
@@ -441,7 +443,7 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
 
           {item.forwarded_from && (
             <div className="text-[10px] font-mono text-[#8A8880]">
-              Forwarded from{' '}
+              {t('Forwarded from')}{' '}
               {item.forwarded_from.url
                 ? <a href={item.forwarded_from.url} target="_blank" rel="noopener noreferrer" className="text-[var(--cyan-primary)] hover:underline">{item.forwarded_from.name}</a>
                 : <span className="text-[#C9C5BC]">{item.forwarded_from.name}</span>}
@@ -450,7 +452,7 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
 
           {item.carriers.length > 0 && (
             <div>
-              <div className="mb-1 text-[8.5px] font-mono tracking-widest text-[#5C5A54]">ALSO CARRIED BY</div>
+              <div className="mb-1 text-[8.5px] font-mono tracking-widest text-[#5C5A54]">{t('ALSO CARRIED BY')}</div>
               <ul className="space-y-0.5">
                 {item.carriers.map(c => (
                   <li key={c.source} className="flex items-center gap-1.5 text-[10px] font-mono">
@@ -459,7 +461,7 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
                     {c.lean && <span className="truncate uppercase text-[8.5px]" style={{ color: blocColor(c.bloc) }}>{c.lean}</span>}
                     <span className="ml-auto flex-shrink-0 text-[#5C5A54]">{c.published ? timeAgo(c.published, now) : ''}</span>
                     {c.link && (
-                      <a href={c.link} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-[var(--cyan-primary)] hover:opacity-70" aria-label={`Open ${c.source_name} post`}>
+                      <a href={c.link} target="_blank" rel="noopener noreferrer" className="flex-shrink-0 text-[var(--cyan-primary)] hover:opacity-70" aria-label={`${t('Open post')}: ${c.source_name}`}>
                         <ExternalLink className="w-2.5 h-2.5" />
                       </a>
                     )}
@@ -477,7 +479,7 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 rounded border border-[var(--cyan-primary)]/30 bg-[var(--cyan-primary)]/10 px-2 py-1 text-[9.5px] font-mono tracking-wider text-[var(--cyan-primary)] hover:bg-[var(--cyan-primary)]/20"
               >
-                <ExternalLink className="w-2.5 h-2.5" /> OPEN POST
+                <ExternalLink className="w-2.5 h-2.5" /> {t('OPEN POST')}
               </a>
             )}
             {item.reply_to && (
@@ -487,14 +489,14 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 rounded border border-white/10 px-2 py-1 text-[9.5px] font-mono tracking-wider text-[#9B978E] hover:bg-white/5"
               >
-                <CornerDownRight className="w-2.5 h-2.5" /> IN REPLY TO
+                <CornerDownRight className="w-2.5 h-2.5" /> {t('IN REPLY TO')}
               </a>
             )}
             {item.coords && item.place && (
               <button
                 type="button"
                 onClick={() => onLocate(item.coords![0], item.coords![1], { zoom: item.place!.precision === 'settlement' ? 10 : 7, alertId: item.id })}
-                title={`${item.place.label} — the place the post names. Town-level: a post names a place, not an exact spot.`}
+                title={`${item.place.label} — ${t('the place the post names. Town-level: a post names a place, not an exact spot.')}`}
                 className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[9.5px] font-mono tracking-wider hover:bg-white/5"
                 style={{ color: kind.color, borderColor: `${kind.color}55` }}
               >
@@ -505,14 +507,14 @@ function NewsCard({ item, now, open, wide, onToggle, onLocate }: {
               <button
                 type="button"
                 onClick={() => onLocate(item.coords![0], item.coords![1])}
-                title={item.anchor ? `Approximate: the centroid for "${item.anchor}", not the event location` : 'Approximate location'}
+                title={item.anchor ? `${t('Approximate: the centroid for')}"${item.anchor}"${t(', not the event location')}` : t('Approximate location')}
                 className="inline-flex items-center gap-1 rounded border border-white/10 px-2 py-1 text-[9.5px] font-mono tracking-wider text-[#9B978E] hover:bg-white/5"
               >
-                <MapPin className="w-2.5 h-2.5" /> ≈ {(item.anchor || 'region').toUpperCase()}
+                <MapPin className="w-2.5 h-2.5" /> ≈ {t((item.anchor || 'region').toUpperCase())}
               </button>
             )}
             {item.bloc && (
-              <span className="ml-auto text-[8.5px] font-mono tracking-wider" style={{ color }}>{BLOCS[item.bloc].label.toUpperCase()}</span>
+              <span className="ml-auto text-[8.5px] font-mono tracking-wider" style={{ color }}>{t(BLOCS[item.bloc].label.toUpperCase())}</span>
             )}
           </div>
         </div>
@@ -536,6 +538,7 @@ function StatementCard({ speaker, items, now, open, wide, onToggle }: {
   const lead = items[0];
   const color = blocColor(lead.bloc);
   const fresh = now - lead.ts < 15 * 60_000;
+  const { t } = useI18n();
   return (
     <article
       className={`rounded-lg border border-l-2 transition-colors ${wide ? 'xl:col-span-2' : ''} ${open ? 'bg-[#15151A] border-[#3A3A38]' : 'bg-[#111111]/70 border-[#26262A] hover:bg-[#17171B] hover:border-[#34343A]'}`}
@@ -544,7 +547,7 @@ function StatementCard({ speaker, items, now, open, wide, onToggle }: {
       <button type="button" onClick={onToggle} aria-expanded={open} className="w-full text-left px-2.5 pt-2 pb-1.5 outline-none focus-visible:ring-1 focus-visible:ring-white/30 rounded-lg">
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9.5px] font-mono uppercase tracking-wider">
-            {fresh && <span className="w-1.5 h-1.5 rounded-full animate-osiris-pulse" style={{ background: ACCENT }} title="Posted in the last 15 minutes" />}
+            {fresh && <span className="w-1.5 h-1.5 rounded-full animate-osiris-pulse" style={{ background: ACCENT }} title={t('Posted in the last 15 minutes')} />}
             <span className="font-semibold text-[#E8E6E0]">{lead.source_name}</span>
             {lead.lean && <span style={{ color }}>{lead.lean}</span>}
           </div>
@@ -553,9 +556,9 @@ function StatementCard({ speaker, items, now, open, wide, onToggle }: {
           </time>
         </div>
         <h4 className="mt-1 font-sans text-[12.5px] font-medium leading-snug text-[#F2EFE8]">
-          {items.some(i => i.flag) && <span className="mr-1.5 inline-block translate-y-[-1px] rounded bg-[#FF3D3D]/15 px-1 text-[8.5px] font-mono font-bold tracking-wider text-[#FF6B6B]">BREAKING</span>}
+          {items.some(i => i.flag) && <span className="mr-1.5 inline-block translate-y-[-1px] rounded bg-[#FF3D3D]/15 px-1 text-[8.5px] font-mono font-bold tracking-wider text-[#FF6B6B]">{t('BREAKING')}</span>}
           {speaker}
-          <span className="ml-1.5 whitespace-nowrap text-[9px] font-mono font-normal tracking-wider text-[#8A8880]">{items.length} STATEMENTS</span>
+          <span className="ml-1.5 whitespace-nowrap text-[9px] font-mono font-normal tracking-wider text-[#8A8880]">{items.length} {t('STATEMENTS')}</span>
         </h4>
       </button>
       <ol className="px-2.5 pb-2 space-y-1">
@@ -568,7 +571,7 @@ function StatementCard({ speaker, items, now, open, wide, onToggle }: {
               {item.media && (item.media.kind === 'video' ? <Play className="w-2.5 h-2.5" /> : <ImageIcon className="w-2.5 h-2.5" />)}
               {timeAgo(item.ts, now).replace(' ago', '')}
               {item.link && (
-                <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-[var(--cyan-primary)] hover:opacity-70" aria-label="Open this statement on Telegram">
+                <a href={item.link} target="_blank" rel="noopener noreferrer" className="text-[var(--cyan-primary)] hover:opacity-70" aria-label={t('Open this statement on Telegram')}>
                   <ExternalLink className="w-2.5 h-2.5" />
                 </a>
               )}
@@ -582,13 +585,14 @@ function StatementCard({ speaker, items, now, open, wide, onToggle }: {
 
 function QuakeCard({ item, now, onLocate }: { item: QuakeAlert; now: number; onLocate: (lat: number, lng: number) => void }) {
   const color = quakeColor(item.magnitude);
+  const { t } = useI18n();
   return (
     <article className="rounded-lg border border-[#26262A] border-l-2 bg-[#111111]/70 hover:bg-[#17171B] transition-colors" style={{ borderLeftColor: color }}>
       <div className="flex items-center gap-2.5 px-2.5 py-2">
         <button
           type="button"
           onClick={() => onLocate(item.lat, item.lng)}
-          title="Show on map"
+          title={t('Show on map')}
           className="flex h-10 w-10 flex-shrink-0 flex-col items-center justify-center rounded-md font-mono transition-transform hover:scale-105"
           style={{ background: `${color}1c`, border: `1px solid ${color}55`, color }}
         >
@@ -596,25 +600,25 @@ function QuakeCard({ item, now, onLocate }: { item: QuakeAlert; now: number; onL
           <span className="mt-0.5 text-[7px] tracking-widest">MAG</span>
         </button>
         <div className="flex-1 min-w-0">
-          <div className="font-sans text-[12px] leading-snug text-[#F2EFE8] line-clamp-2">{item.place}</div>
+          <div className="font-sans text-[12px] leading-snug text-[#F2EFE8] line-clamp-2">{item.place === 'Unknown location' ? t('Unknown location') : item.place}</div>
           <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9.5px] font-mono text-[#8A8880]">
             <time dateTime={new Date(item.ts).toISOString()} title={new Date(item.ts).toLocaleString()}>{timeAgo(item.ts, now)}</time>
-            {item.depth != null && <span>· {Math.round(item.depth)} km deep</span>}
-            {item.felt ? <span>· felt by {item.felt.toLocaleString()}</span> : null}
+            {item.depth != null && <span>· {Math.round(item.depth)} {t('km deep')}</span>}
+            {item.felt ? <span>· {t('felt by')} {item.felt.toLocaleString()}</span> : null}
           </div>
           {(item.tsunami || item.pager) && (
             <div className="mt-1 flex flex-wrap gap-1">
-              {item.tsunami && <Chip color="#448AFF"><Waves className="w-2 h-2" /> tsunami flag</Chip>}
-              {item.pager && <Chip color={PAGER_COLORS[item.pager] || '#8A8880'} title="USGS PAGER impact alert level">PAGER {item.pager}</Chip>}
+              {item.tsunami && <Chip color="#448AFF"><Waves className="w-2 h-2" /> {t('tsunami flag')}</Chip>}
+              {item.pager && <Chip color={PAGER_COLORS[item.pager] || '#8A8880'} title={t('USGS PAGER impact alert level')}>PAGER {item.pager}</Chip>}
             </div>
           )}
         </div>
         <div className="flex flex-col items-end gap-1 flex-shrink-0">
-          <button type="button" onClick={() => onLocate(item.lat, item.lng)} className="p-1 rounded text-[#8A8880] hover:text-white hover:bg-white/10" aria-label="Show on map">
+          <button type="button" onClick={() => onLocate(item.lat, item.lng)} className="p-1 rounded text-[#8A8880] hover:text-white hover:bg-white/10" aria-label={t('Show on map')}>
             <MapPin className="w-3 h-3" />
           </button>
           {item.url && (
-            <a href={item.url} target="_blank" rel="noopener noreferrer" className="p-1 rounded text-[var(--cyan-primary)] hover:bg-white/10" aria-label="Open USGS event page">
+            <a href={item.url} target="_blank" rel="noopener noreferrer" className="p-1 rounded text-[var(--cyan-primary)] hover:bg-white/10" aria-label={t('Open USGS event page')}>
               <ExternalLink className="w-3 h-3" />
             </a>
           )}
@@ -636,6 +640,7 @@ export function expiryLabel(expires: number, now: number): string | null {
 
 function WarningCard({ item, now, onLocate }: { item: WarningAlert; now: number; onLocate: (lat: number, lng: number, options?: LocateOptions) => void }) {
   const color = SEVERITY_COLORS[item.severity];
+  const { t } = useI18n();
   const left = item.expires != null ? expiryLabel(item.expires, now) : null;
   return (
     <article className="rounded-lg border border-[#26262A] border-l-2 bg-[#111111]/70 hover:bg-[#17171B] transition-colors" style={{ borderLeftColor: color }}>
@@ -643,8 +648,8 @@ function WarningCard({ item, now, onLocate }: { item: WarningAlert; now: number;
         <div className="flex items-start gap-2">
           <div className="flex-1 min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[9.5px] font-mono uppercase tracking-wider">
             <AlertTriangle className="w-2.5 h-2.5 flex-shrink-0" style={{ color }} />
-            <span className="font-semibold" style={{ color }}>{item.type}</span>
-            <span className="text-[#8A8880]">{item.provider}</span>
+            <span className="font-semibold" style={{ color }}>{item.type === 'Warning' ? t('Warning') : item.type}</span>
+            <span className="text-[#8A8880]">{item.provider === 'Official warning' ? t('Official warning') : item.provider}</span>
           </div>
           <time dateTime={new Date(item.ts).toISOString()} title={new Date(item.ts).toLocaleString()} className="flex-shrink-0 text-[9.5px] font-mono text-[#8A8880]">
             {timeAgo(item.ts, now)}
@@ -658,20 +663,20 @@ function WarningCard({ item, now, onLocate }: { item: WarningAlert; now: number;
         )}
 
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
-          <Chip color={color} title="As the issuer graded it">{item.severity} severity</Chip>
-          {left && <Chip color={left === 'expired' ? '#5C5A54' : '#8A8880'} title={`Runs until ${new Date(item.expires!).toLocaleString()}`}>{left}</Chip>}
+          <Chip color={color} title={t('As the issuer graded it')}>{t(item.severity)} {t('severity')}</Chip>
+          {left && <Chip color={left === 'expired' ? '#5C5A54' : '#8A8880'} title={`${t('Runs until')} ${new Date(item.expires!).toLocaleString()}`}>{left}</Chip>}
           <div className="ml-auto flex items-center gap-1">
             <button
               type="button"
               onClick={() => onLocate(item.lat, item.lng, { zoom: 6 })}
-              title="Show where this was issued"
+              title={t('Show where this was issued')}
               className="inline-flex items-center gap-1 rounded border px-2 py-1 text-[9.5px] font-mono tracking-wider hover:bg-white/5"
               style={{ color, borderColor: `${color}55` }}
             >
-              <MapPin className="w-2.5 h-2.5" /> SHOW
+              <MapPin className="w-2.5 h-2.5" /> {t('SHOW')}
             </button>
             {item.url && (
-              <a href={item.url} target="_blank" rel="noopener noreferrer" className="p-1 rounded text-[var(--cyan-primary)] hover:bg-white/10" aria-label={`Open the ${item.provider} notice`}>
+              <a href={item.url} target="_blank" rel="noopener noreferrer" className="p-1 rounded text-[var(--cyan-primary)] hover:bg-white/10" aria-label={`${t('Open the')} ${item.provider} ${t('notice')}`}>
                 <ExternalLink className="w-3 h-3" />
               </a>
             )}
@@ -696,6 +701,7 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
   const [overviewOpen, setOverviewOpen] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const [now, setNow] = useState(() => Date.now());
+  const { t } = useI18n();
 
   // Relative times ("12m ago") stay current while the panel is open.
   useEffect(() => {
@@ -861,11 +867,11 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
   }, [maximized, onLocate]);
 
   const tabs: { id: Tab; label: string; count: number }[] = [
-    { id: 'all', label: 'ALL', count: news.length + quakes.length + warnings.length },
-    { id: 'news', label: 'NEWS', count: news.length },
-    { id: 'warnings', label: 'WARN', count: warnings.length },
-    { id: 'quakes', label: 'QUAKE', count: quakes.length },
-    { id: 'feeds', label: 'FEEDS', count: BUILTIN_FEEDS.length },
+    { id: 'all', label: t('ALL'), count: news.length + quakes.length + warnings.length },
+    { id: 'news', label: t('NEWS'), count: news.length },
+    { id: 'warnings', label: t('WARN'), count: warnings.length },
+    { id: 'quakes', label: t('QUAKE'), count: quakes.length },
+    { id: 'feeds', label: t('FEEDS'), count: BUILTIN_FEEDS.length },
   ];
 
   /* Grouped by where each source is read from, since a channel going quiet
@@ -875,13 +881,13 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
       .map(kind => {
         const group = sources.filter(s => (s.kind ?? 'telegram') === kind);
         if (!group.length) return '';
-        const heading = kind === 'telegram' ? 'CHANNELS' : 'WIRES';
-        const lines = group.map(s => `  ${s.name}: ${s.count ? `${s.count} items, latest ${timeAgo(s.latest, now)}` : s.latest ? `quiet — nothing in 72h (last ${timeAgo(s.latest, now)})` : 'unreachable'}`);
+        const heading = kind === 'telegram' ? t('CHANNELS') : t('WIRES');
+        const lines = group.map(s => `  ${s.name}: ${s.count ? `${s.count} ${t('items, latest')} ${timeAgo(s.latest, now)}` : s.latest ? `${t('quiet — nothing in 72h (last')} ${timeAgo(s.latest, now)})` : t('unreachable')}`);
         return `${heading}\n${lines.join('\n')}`;
       })
       .filter(Boolean)
       .join('\n\n')
-    : 'Waiting for the source report';
+    : t('Waiting for the source report');
 
   /* Rocket and breaking are filters over reports; leaving one set while the
      panel shows warnings would label the list with a filter it is not using. */
@@ -891,15 +897,15 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
   }, []);
 
   const nowStats: { key: string; label: string; value: string; color: string; title: string; onClick: () => void }[] = [
-    { key: 'severe', label: 'SEVERE', value: String(rightNow.severe), color: SEVERITY_COLORS.high, title: 'Warnings in force that their issuer graded severe or extreme', onClick: () => { selectTab('warnings'); setQuery(''); } },
-    { key: 'rocket', label: 'ROCKET', value: String(rightNow.rockets), color: ALERT_KINDS.rocket.color, title: 'Reports of rockets or missiles in the last six hours', onClick: () => { selectTab('news'); setNewsKind(newsKind === 'rocket' ? null : 'rocket'); } },
-    { key: 'breaking', label: 'BREAKING', value: String(rightNow.breaking), color: ACCENT, title: 'Reports a channel flagged as breaking in the last six hours', onClick: () => { selectTab('news'); setNewsKind(newsKind === 'breaking' ? null : 'breaking'); } },
+    { key: 'severe', label: t('SEVERE'), value: String(rightNow.severe), color: SEVERITY_COLORS.high, title: t('Warnings in force that their issuer graded severe or extreme'), onClick: () => { selectTab('warnings'); setQuery(''); } },
+    { key: 'rocket', label: t('ROCKET'), value: String(rightNow.rockets), color: ALERT_KINDS.rocket.color, title: t('Reports of rockets or missiles in the last six hours'), onClick: () => { selectTab('news'); setNewsKind(newsKind === 'rocket' ? null : 'rocket'); } },
+    { key: 'breaking', label: t('BREAKING'), value: String(rightNow.breaking), color: ACCENT, title: t('Reports a channel flagged as breaking in the last six hours'), onClick: () => { selectTab('news'); setNewsKind(newsKind === 'breaking' ? null : 'breaking'); } },
     ...(rightNow.biggest ? [{
       key: 'quake',
-      label: 'QUAKE',
+      label: t('QUAKE'),
       value: `M${rightNow.biggest.magnitude.toFixed(1)}`,
       color: quakeColor(rightNow.biggest.magnitude),
-      title: `Largest earthquake in the last day — ${rightNow.biggest.place}`,
+      title: `${t('Largest earthquake in the last day')} — ${rightNow.biggest.place}`,
       onClick: () => selectTab('quakes'),
     }] : []),
   ];
@@ -949,16 +955,16 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
       {/* Search and perspective */}
       <div className="flex gap-1.5">
         <label className="relative flex-1 min-w-0">
-          <span className="sr-only">Search alerts</span>
+          <span className="sr-only">{t('Search alerts')}</span>
           <Search className="pointer-events-none absolute left-2 top-1/2 h-3 w-3 -translate-y-1/2 text-[#5C5A54]" />
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder={tab === 'feeds' ? 'Search feeds…' : 'Search headlines, places, channels…'}
+            placeholder={tab === 'feeds' ? t('Search feeds…') : t('Search headlines, places, channels…')}
             className="w-full rounded border border-[#2A2A28] bg-black/30 py-1 pl-6 pr-6 text-[11px] text-[#E8E6E0] placeholder:text-[#5C5A54] outline-none focus:border-[var(--cyan-primary)]/50"
           />
           {query && (
-            <button onClick={() => setQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#5C5A54] hover:text-white" aria-label="Clear search">
+            <button onClick={() => setQuery('')} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-[#5C5A54] hover:text-white" aria-label={t('Clear search')}>
               <X className="h-3 w-3" />
             </button>
           )}
@@ -967,12 +973,12 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
           <select
             value={bloc}
             onChange={e => setBloc(e.target.value as Bloc | 'all')}
-            aria-label="Filter by perspective"
+            aria-label={t('Filter by perspective')}
             className="w-[108px] flex-shrink-0 rounded border border-[#2A2A28] bg-[#0c0c10] px-1 py-1 text-[10px] font-mono text-[#C9C5BC] outline-none focus:border-[var(--cyan-primary)]/50"
             style={bloc !== 'all' ? { color: BLOCS[bloc].color, borderColor: `${BLOCS[bloc].color}66` } : undefined}
           >
-            <option value="all">All sides</option>
-            {BLOC_ORDER.map(b => <option key={b} value={b}>{BLOCS[b].label}</option>)}
+            <option value="all">{t('All sides')}</option>
+            {BLOC_ORDER.map(b => <option key={b} value={b}>{t(BLOCS[b].label)}</option>)}
           </select>
         )}
       </div>
@@ -995,21 +1001,21 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
       {/* Threads: the same clustering the overview uses, available without a click */}
       {tab !== 'quakes' && tab !== 'warnings' && tab !== 'feeds' && threads.length > 0 && !overviewOpen && (
         <div className={maximized ? 'flex flex-wrap gap-1' : '-mx-3 flex gap-1 overflow-x-auto px-3 pb-0.5 styled-scrollbar'}>
-          {threads.map(t => {
-            const active = t.id === threadId;
-            const dot = t.perspective === 'cross' ? '#00E676' : t.perspective === 'single' ? '#FF9500' : '#5C5A54';
+          {threads.map(th => {
+            const active = th.id === threadId;
+            const dot = th.perspective === 'cross' ? '#00E676' : th.perspective === 'single' ? '#FF9500' : '#5C5A54';
             return (
               <button
-                key={t.id}
-                onClick={() => selectThread(active ? null : t.id)}
+                key={th.id}
+                onClick={() => selectThread(active ? null : th.id)}
                 aria-pressed={active}
-                title={`${t.count} reports from ${t.sources.length} channels${t.topics.length ? ` — ${t.topics.join(', ')}` : ''}`}
+                title={`${th.count} ${t('reports from')} ${th.sources.length} ${t('channels')}${th.topics.length ? ` — ${th.topics.join(', ')}` : ''}`}
                 className={`flex flex-shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[9.5px] font-mono whitespace-nowrap transition-colors ${active ? 'text-white' : 'text-[#9B978E] hover:text-[#E8E6E0] border-[#2A2A28] hover:border-[#3A3A38]'}`}
                 style={active ? { borderColor: `${ACCENT}99`, background: `${ACCENT}22` } : undefined}
               >
                 <span className="h-1.5 w-1.5 rounded-full" style={{ background: dot }} />
-                {t.label}
-                <span className="tabular-nums opacity-60">{t.count}</span>
+                {t(th.label)}
+                <span className="tabular-nums opacity-60">{th.count}</span>
               </button>
             );
           })}
@@ -1019,9 +1025,9 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
       {filtersActive && tab !== 'feeds' && (
         <div className="flex items-center justify-between rounded border border-white/5 bg-white/[0.02] px-2 py-1 text-[9.5px] font-mono text-[#8A8880]">
           <span className="truncate">
-            SHOWING {list.length}{activeThread ? ` · ${activeThread.label.toUpperCase()}` : ''}{bloc !== 'all' ? ` · ${BLOCS[bloc].short}` : ''}{newsKind ? ` · ${newsKind.toUpperCase()} ONLY` : ''}
+            {t('SHOWING')} {list.length}{activeThread ? ` · ${t(activeThread.label.toUpperCase())}` : ''}{bloc !== 'all' ? ` · ${t(BLOCS[bloc].short)}` : ''}{newsKind ? ` · ${t(newsKind.toUpperCase())} ${t('ONLY')}` : ''}
           </span>
-          <button onClick={clearFilters} className="flex-shrink-0 text-[var(--cyan-primary)] hover:underline">CLEAR</button>
+          <button onClick={clearFilters} className="flex-shrink-0 text-[var(--cyan-primary)] hover:underline">{t('CLEAR')}</button>
         </div>
       )}
     </div>
@@ -1034,7 +1040,7 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
         if (!feeds.length) return null;
         return (
           <section key={region}>
-            <h5 className="mb-1 text-[8.5px] font-mono tracking-widest text-[#5C5A54]">{label}</h5>
+            <h5 className="mb-1 text-[8.5px] font-mono tracking-widest text-[#5C5A54]">{t(label)}</h5>
             <div className="space-y-1">
               {feeds.map(f => (
                 <button
@@ -1046,32 +1052,32 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
                   <Radio className="h-3 w-3 flex-shrink-0 text-[#FF4081]" />
                   <span className="flex-1 min-w-0 truncate text-[11.5px] text-[#E8E6E0]">{f.name}</span>
                   <span className="flex-shrink-0 text-[9px] font-mono uppercase text-[#8A8880]">{f.city}, {f.country}</span>
-                  <span className="flex-shrink-0 rounded bg-white/5 px-1 text-[8px] font-mono uppercase text-[#5C5A54]">{f.category}</span>
+                  <span className="flex-shrink-0 rounded bg-white/5 px-1 text-[8px] font-mono uppercase text-[#5C5A54]">{t(f.category)}</span>
                 </button>
               ))}
             </div>
           </section>
         );
       })}
-      {visibleFeeds.length === 0 && <EmptyState text="No feeds match" onClear={clearFilters} />}
+      {visibleFeeds.length === 0 && <EmptyState text={t('No feeds match')} onClear={clearFilters} />}
     </div>
   ) : loading ? (
     <div className="space-y-2" aria-busy="true">
       {[0, 1, 2].map(i => (
         <div key={i} className="h-[74px] animate-pulse rounded-lg border border-[#26262A] bg-[#111111]/60" />
       ))}
-      <div className="text-center text-[10px] font-mono text-[#5C5A54]">READING CHANNELS…</div>
+      <div className="text-center text-[10px] font-mono text-[#5C5A54]">{t('READING CHANNELS…')}</div>
     </div>
   ) : list.length === 0 ? (
     filtersActive
-      ? <EmptyState text="No alerts match these filters" onClear={clearFilters} />
-      : <EmptyState text={tab === 'quakes' ? 'No recent earthquakes' : tab === 'warnings' ? 'No warnings in force' : 'No reports — the sources did not answer'} onRetry={onRefresh ? refresh : undefined} />
+      ? <EmptyState text={t('No alerts match these filters')} onClear={clearFilters} />
+      : <EmptyState text={tab === 'quakes' ? t('No recent earthquakes') : tab === 'warnings' ? t('No warnings in force') : t('No reports — the sources did not answer')} onRetry={onRefresh ? refresh : undefined} />
   ) : (
     <div className="space-y-3">
       {grouped.map(group => (
         <section key={group.label}>
           <h5 className={`sticky top-0 z-10 -mx-1 mb-1.5 px-1 py-1 text-[8.5px] font-mono tracking-widest text-[#5C5A54] backdrop-blur-md ${maximized ? 'bg-[#0a0a09]/90' : 'bg-[#08080c]/80'}`}>
-            {group.label} <span className="opacity-60">· {group.units.reduce((n, u) => n + (u.kind === 'statement' ? u.items.length : 1), 0)}</span>
+            {t(group.label)} <span className="opacity-60">· {group.units.reduce((n, u) => n + (u.kind === 'statement' ? u.items.length : 1), 0)}</span>
           </h5>
           <div className={maximized ? 'grid gap-2 grid-cols-1 xl:grid-cols-2 items-start' : 'space-y-2'}>
             {group.units.map(unit => {
@@ -1115,7 +1121,7 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.15, duration: 0.4 }}
       role={maximized ? 'dialog' : undefined}
-      aria-label={maximized ? 'Live alerts' : undefined}
+      aria-label={maximized ? t('Live alerts') : undefined}
       className={`glass-panel flex flex-col overflow-hidden pointer-events-auto transition-all duration-300 ${maximized ? 'fixed inset-4 z-[9999] bg-[#0a0a09]/95 backdrop-blur-3xl' : 'shrink-0 h-[560px] max-h-[82vh] resize-y'}`}
     >
       {/* Header: title and controls, then a status line */}
@@ -1128,7 +1134,7 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
             className="flex min-w-0 items-center gap-2 outline-none"
           >
             <Radio className="w-3.5 h-3.5 flex-shrink-0" style={{ color: ACCENT }} />
-            <span className="hud-text whitespace-nowrap text-[11px] text-[var(--text-primary)]">LIVE ALERTS</span>
+            <span className="hud-text whitespace-nowrap text-[11px] text-[var(--text-primary)]">{t('LIVE ALERTS')}</span>
             <span className="gotham-tag gotham-tag--high" style={{ fontSize: '9px', padding: '1px 5px' }}>{news.length + quakes.length}</span>
           </button>
           <div className="flex items-center gap-0.5 flex-shrink-0">
@@ -1138,28 +1144,28 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
                 aria-pressed={pinsOn}
                 className={`flex items-center gap-0.5 rounded px-1 py-1 transition-colors ${pinsOn ? 'text-[#FF4081] hover:bg-[#FF4081]/15' : 'text-[var(--text-muted)] hover:bg-white/10'}`}
                 title={pinsOn
-                  ? `${pinned.length} of these reports are pinned on the map — click to hide the pins`
-                  : 'Pin these reports on the map'}
-                aria-label={pinsOn ? 'Hide alert pins on the map' : 'Show alert pins on the map'}
+                  ? `${pinned.length} ${t('of these reports are pinned on the map — click to hide the pins')}`
+                  : t('Pin these reports on the map')}
+                aria-label={pinsOn ? t('Hide alert pins on the map') : t('Show alert pins on the map')}
               >
                 <MapPin className="w-3 h-3" />
                 <span className="text-[9px] font-mono tabular-nums">{pinned.length}</span>
               </button>
             )}
             {onRefresh && (
-              <button onClick={refresh} disabled={refreshing} className="p-1 rounded hover:bg-white/10 transition-colors" title="Refresh (channels are re-read every 3 minutes)" aria-label="Refresh alerts">
+              <button onClick={refresh} disabled={refreshing} className="p-1 rounded hover:bg-white/10 transition-colors" title={t('Refresh (channels are re-read every 3 minutes)')} aria-label={t('Refresh alerts')}>
                 <RefreshCw className={`w-3 h-3 text-[var(--text-muted)] ${refreshing ? 'animate-spin' : ''}`} />
               </button>
             )}
             <button
               onClick={() => { setMaximized(!maximized); if (!expanded) setExpanded(true); }}
               className="p-1 rounded hover:bg-white/10 transition-colors"
-              title={maximized ? 'Restore (Esc)' : 'Maximize'}
-              aria-label={maximized ? 'Restore panel' : 'Maximize panel'}
+              title={maximized ? t('Restore (Esc)') : t('Maximize')}
+              aria-label={maximized ? t('Restore panel') : t('Maximize panel')}
             >
               {maximized ? <Minimize2 className="w-3 h-3 text-[var(--text-muted)]" /> : <Maximize2 className="w-3 h-3 text-[var(--text-muted)]" />}
             </button>
-            <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-white/10 transition-colors" aria-label={expanded ? 'Collapse panel' : 'Expand panel'}>
+            <button onClick={() => setExpanded(!expanded)} className="p-1 rounded hover:bg-white/10 transition-colors" aria-label={expanded ? t('Collapse panel') : t('Expand panel')}>
               {expanded ? <ChevronUp className="w-3.5 h-3.5 text-[var(--text-muted)]" /> : <ChevronDown className="w-3.5 h-3.5 text-[var(--text-muted)]" />}
             </button>
           </div>
@@ -1172,13 +1178,13 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
               style={{ color: liveSources === sources.length ? '#00E676' : '#FF9500' }}
             >
               <span className="h-1.5 w-1.5 rounded-full animate-osiris-pulse" style={{ background: 'currentColor' }} />
-              {liveSources}/{sources.length} SOURCES LIVE
+              {liveSources}/{sources.length} {t('SOURCES LIVE')}
             </span>
           ) : (
-            <span>CONNECTING…</span>
+            <span>{t('CONNECTING…')}</span>
           )}
-          {fetchedAt && <span title={`Feed fetched ${new Date(fetchedAt).toLocaleString()}`}>· UPDATED {timeAgo(fetchedAt, now).toUpperCase()}</span>}
-          {breakingCount > 0 && <span className="text-[#FF6B6B]">· {breakingCount} BREAKING</span>}
+          {fetchedAt && <span title={`${t('Feed fetched')} ${new Date(fetchedAt).toLocaleString()}`}>· {t('UPDATED')} {timeAgo(fetchedAt, now).toUpperCase()}</span>}
+          {breakingCount > 0 && <span className="text-[#FF6B6B]">· {breakingCount} {t('BREAKING')}</span>}
         </div>
       </div>
 
@@ -1219,11 +1225,12 @@ export default function LiveAlerts({ data, onLocate, onWatchFeed, onRefresh, pin
 }
 
 function EmptyState({ text, onClear, onRetry }: { text: string; onClear?: () => void; onRetry?: () => void }) {
+  const { t } = useI18n();
   return (
     <div className="py-6 text-center">
       <div className="text-[11px] font-mono text-[var(--text-muted)]">{text}</div>
-      {onClear && <button onClick={onClear} className="mt-2 text-[10px] font-mono text-[var(--cyan-primary)] hover:underline">CLEAR FILTERS</button>}
-      {onRetry && <button onClick={onRetry} className="mt-2 text-[10px] font-mono text-[var(--cyan-primary)] hover:underline">TRY AGAIN</button>}
+      {onClear && <button onClick={onClear} className="mt-2 text-[10px] font-mono text-[var(--cyan-primary)] hover:underline">{t('CLEAR FILTERS')}</button>}
+      {onRetry && <button onClick={onRetry} className="mt-2 text-[10px] font-mono text-[var(--cyan-primary)] hover:underline">{t('TRY AGAIN')}</button>}
     </div>
   );
 }

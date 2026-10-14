@@ -153,7 +153,7 @@ export default function DocsClient() {
             </svg>
             <span className="flex flex-col leading-none">
               <span className="text-[12px] font-bold tracking-[0.3em] text-[var(--gold-primary)] font-mono">
-                OSIRIS
+                GÖKSEL
               </span>
               <span className="text-[9px] font-mono tracking-[0.22em] text-[var(--text-muted)] uppercase mt-[3px]">
                 Docs
@@ -269,12 +269,12 @@ export default function DocsClient() {
               <span className="text-[var(--text-heading)]">Build on the</span>
               <br />
               <span className="bg-gradient-to-r from-[var(--gold-primary)] via-[#F0D060] to-[var(--cyan-primary)] bg-clip-text text-transparent">
-                OSIRIS platform
+                GÖKSEL platform
               </span>
             </h1>
 
             <p className="text-[15px] leading-[1.75] text-[var(--text-secondary)] max-w-[42rem]">
-              OSIRIS aggregates aviation, maritime, seismic, conflict, cyber, and OSINT feeds onto a single
+              GÖKSEL aggregates aviation, maritime, seismic, conflict, cyber, and OSINT feeds onto a single
               GPU-rendered map — and exposes every one of them as a plain HTTP endpoint. This is the same API the
               dashboard runs on. There is no separate, privileged internal tier.
             </p>
@@ -374,7 +374,7 @@ print(len(data["commercial_flights"]), "commercial")`,
           </Section>
 
           <Section id="self-hosting" eyebrow="Guide" title="Self-Hosting">
-            <p>OSIRIS needs Node 20+ and no database. A local instance is three commands:</p>
+            <p>GÖKSEL needs Node 20+ and no database. A local instance is three commands:</p>
             <Pre label="Local development" lang="bash">{`git clone https://github.com/simplifaisoul/osiris.git
 cd osiris
 npm install
@@ -488,7 +488,7 @@ docker compose up -d`}</Pre>
 
           <Section id="oi" eyebrow="Guide" title="OI & MCP">
             <p>
-              OI is the AI in OSIRIS, on your own model key, and it works two ways. <strong>Assist</strong> is a
+              OI is the AI in GÖKSEL, on your own model key, and it works two ways. <strong>Assist</strong> is a
               conversation (press <kbd>O</kbd>): ask in words, typed or spoken, and OI works the map for you. It flies
               to the place you name, switches the layers on, searches what is live (flights, military aircraft, ships,
               ports and chokepoints, earthquakes, fires, weather, disaster alerts, news, cameras, satellites), marks
@@ -497,7 +497,7 @@ docker compose up -d`}</Pre>
               Research or Forecast to steer it, or leave it on Auto.
             </p>
             <p>
-              <strong>Forecast</strong> is OSIRIS&apos;s prediction engine. Ask it a question and it researches it, builds a
+              <strong>Forecast</strong> is GÖKSEL&apos;s prediction engine. Ask it a question and it researches it, builds a
               world model (the actors, where they are, how they relate), and casts the actors who decide the outcome as
               agents, each with what it wants, the levers it can pull and its red lines. Then it plays them against each
               other over simulated time, in dated periods from today to the question&apos;s horizon, in several parallel
@@ -518,7 +518,7 @@ docker compose up -d`}</Pre>
                 { k: 'Steering', v: 'Whoever started a run holds its token: they alone can inject events into it or stop it. Anyone with a key can question the actors and the report agent.' },
                 { k: 'On the globe', v: 'Violet arcs are alignments and cooperation, magenta are rivalries and pressure, indigo is everything in between; evidence from the feeds is a paler wash of its tone, and each move is an arc from the actor that made it to the actor it was aimed at. All three colours are yours to set in the Style Studio (Map layers → OI).' },
                 { k: 'Workspace', v: 'Full screen (the expand button, with or without a forecast) opens the OI workspace. On the left, the same Forecast / Assist switch as the panel: the ask form, then the prediction with the report or the execution trace (every step the engine took, timed, with what it produced); or the conversation. In the middle, four views on keys 1 to 4: the live globe; the research graph, after MiroFish, with every actor and cited source and every relation, move and quote between them, filters and a flow layout; the timeline, each simulated world period by period with its events, under the worlds pooled; and sortable tables of actors, moves, events, sources and links. On the right, once there is a run, whatever is selected, as an object with its properties and links. Ctrl+K (⌘K) finds any object by name, and in Assist OI can open the workspace, switch its view and open objects for you.' },
-                { k: 'Research', v: 'Before the world model, OI researches the question from sources that can be checked: the reporting (a newsroom of publishers’ own feeds by desk, Yahoo Finance’s newswire for any ticker in play, GDELT and Wikipedia’s Current events, each story with its link and, where the publisher serves it, what the article says; social networks are left out), two years of daily prices for any market price the question turns on, what Polymarket and Manifold price the same question at, Wikipedia background, and the OSIRIS feeds where they are on topic. The actors are the real ones the question turns on (governments, leaders, companies, groups), each played from its own interests; a market is the world they move, never a player.' },
+                { k: 'Research', v: 'Before the world model, OI researches the question from sources that can be checked: the reporting (a newsroom of publishers’ own feeds by desk, Yahoo Finance’s newswire for any ticker in play, GDELT and Wikipedia’s Current events, each story with its link and, where the publisher serves it, what the article says; social networks are left out), two years of daily prices for any market price the question turns on, what Polymarket and Manifold price the same question at, Wikipedia background, and the GÖKSEL feeds where they are on topic. The actors are the real ones the question turns on (governments, leaders, companies, groups), each played from its own interests; a market is the world they move, never a player.' },
                 { k: 'Prices', v: 'A question about a price (a coin, a share, an index, a commodity, a currency) is priced. The instrument’s own daily moves, average trend removed, are resampled into 4,000 paths to the horizon: the statistical baseline. Each simulated world gets its own course for the price, spread across what can happen; the period’s events push it; and the price settles the question in that world. The worlds’ events are then run through the market’s own paths, so three worlds read as a probability, not a tally of three outcomes.' },
                 { k: 'What it rests on', v: 'Every prediction is shown beside what can be checked, on one scale: the statistical baseline, the prediction market on the same question (real money, many traders), the simulation priced, how the worlds ended, and the prediction itself, each a click from its source. The report agent is told to move off a liquid market or the baseline only for reasons it can name.' },
                 { k: 'Every level', v: 'When a prediction market prices the question as a ladder (reach $160, $180, $200…, dip to $90, $60… by the same date), OI reads the whole ladder and sets it beside its own curve, the chance of trading at every level, rung by rung: where the model sees more upside or downside than the crowd, and where they part most.' },
@@ -613,7 +613,7 @@ mcp_servers:
               The method follows{' '}
               <a href="https://github.com/666ghj/MiroFish" target="_blank" rel="noopener noreferrer" className="underline hover:text-white">MiroFish</a>,
               the open-source swarm-intelligence engine: seed a parallel world from real material, populate it with agents,
-              let them interact while you inject variables, then hand the simulation to a report agent. OSIRIS rebuilds that
+              let them interact while you inject variables, then hand the simulation to a report agent. GÖKSEL rebuilds that
               method natively for its own feeds and globe; no MiroFish code is used. A simulation, not a guarantee.
             </p>
           </Section>

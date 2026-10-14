@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ExternalLink, Radio, Maximize2, X } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 /**
  * OSIRIS — LIVE FROM SPACE
@@ -81,6 +82,7 @@ function buildEmbedSrc(videoId: string, big: boolean): string {
 }
 
 export default function SpaceCam() {
+  const { t } = useI18n();
   const [active, setActive] = useState(FEEDS[0]);
   const [expanded, setExpanded] = useState(false);
 
@@ -97,7 +99,7 @@ export default function SpaceCam() {
       <div className="flex items-center gap-2 px-3 py-2 border-b border-[var(--border-secondary)]/40">
         <Radio className="w-3.5 h-3.5 text-[#00E5FF]" />
         <span className="text-[11px] font-mono font-bold tracking-widest text-[#00E5FF]">
-          LIVE FROM SPACE
+          {t('LIVE FROM SPACE')}
         </span>
         <span className="ml-auto flex items-center gap-1">
           <span className="w-1.5 h-1.5 rounded-full bg-[#FF3D3D] animate-pulse" />
@@ -105,7 +107,7 @@ export default function SpaceCam() {
         </span>
         <button
           onClick={() => setExpanded(true)}
-          title="Expand — a bigger player is what makes YouTube serve HD"
+          title={t('Expand — a bigger player is what makes YouTube serve HD')}
           className="ml-1 p-1 rounded hover:bg-[var(--hover-accent)] text-[var(--text-muted)] hover:text-[#00E5FF] transition-colors"
         >
           <Maximize2 className="w-3 h-3" />
@@ -116,7 +118,7 @@ export default function SpaceCam() {
         <iframe
           key={active.videoId}
           src={buildEmbedSrc(active.videoId, false)}
-          title={`ISS live — ${active.label}`}
+          title={`${t('ISS live')} — ${t(active.label)}`}
           allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture"
           allowFullScreen
           className="absolute inset-0 w-full h-full border-0"
@@ -127,7 +129,7 @@ export default function SpaceCam() {
           onClick={() => setExpanded(true)}
           className="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-black/70 text-[9px] font-mono tracking-wider text-[#00E5FF] opacity-0 group-hover/player:opacity-100 transition-opacity"
         >
-          EXPAND FOR HD ↗
+          {t('EXPAND FOR HD ↗')}
         </button>
       </div>
 
@@ -143,7 +145,7 @@ export default function SpaceCam() {
                   : 'border-transparent text-[var(--text-muted)] hover:bg-[var(--hover-accent)]'
               }`}
             >
-              {f.label}
+              {t(f.label)}
             </button>
           ))}
         </div>
@@ -151,9 +153,9 @@ export default function SpaceCam() {
 
       <div className="px-3 py-2 flex items-center justify-between gap-2">
         <div className="min-w-0">
-          <div className="text-[10px] font-mono text-[var(--text-secondary)] truncate">{active.detail}</div>
+          <div className="text-[10px] font-mono text-[var(--text-secondary)] truncate">{t(active.detail)}</div>
           <div className="text-[9px] font-mono text-[var(--text-muted)]">
-            ALT ~{ORBIT_ALT_KM} KM · ORBIT ~93 MIN
+            {t('ALT')} ~{ORBIT_ALT_KM} KM · {t('ORBIT')} ~93 MIN
           </div>
         </div>
         <a
@@ -162,7 +164,7 @@ export default function SpaceCam() {
           rel="noopener noreferrer"
           className="flex items-center gap-1 px-2 py-1 rounded border border-[var(--border-secondary)]/40 text-[9px] font-mono text-[var(--text-muted)] hover:text-[#00E5FF] hover:border-[#00E5FF]/40 transition-colors flex-shrink-0"
         >
-          SOURCE <ExternalLink className="w-2.5 h-2.5" />
+          {t('SOURCE')} <ExternalLink className="w-2.5 h-2.5" />
         </a>
       </div>
 
@@ -178,16 +180,16 @@ export default function SpaceCam() {
             <div className="flex items-center gap-2 mb-2">
               <Radio className="w-4 h-4 text-[#00E5FF]" />
               <span className="text-[11px] font-mono font-bold tracking-widest text-[#00E5FF]">
-                LIVE FROM SPACE
+                {t('LIVE FROM SPACE')}
               </span>
-              <span className="text-[11px] font-mono text-[var(--text-muted)]">· {active.detail}</span>
+              <span className="text-[11px] font-mono text-[var(--text-muted)]">· {t(active.detail)}</span>
               <span className="ml-auto flex items-center gap-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FF3D3D] animate-pulse" />
                 <span className="text-[10px] font-mono tracking-wider text-[var(--text-muted)]">24/7</span>
               </span>
               <button
                 onClick={() => setExpanded(false)}
-                title="Close (Esc)"
+                title={t('Close (Esc)')}
                 className="p-1.5 rounded hover:bg-white/10 text-[var(--text-muted)] hover:text-white transition-colors"
               >
                 <X className="w-4 h-4" />
@@ -204,7 +206,7 @@ export default function SpaceCam() {
               <iframe
                 key={`big-${active.videoId}`}
                 src={buildEmbedSrc(active.videoId, true)}
-                title={`ISS live expanded — ${active.label}`}
+                title={`${t('ISS live expanded')} — ${t(active.label)}`}
                 allow="accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
                 className="absolute inset-0 w-full h-full border-0"
@@ -222,11 +224,11 @@ export default function SpaceCam() {
                       : 'border-white/10 text-[var(--text-muted)] hover:bg-white/10'
                   }`}
                 >
-                  {f.label}
+                  {t(f.label)}
                 </button>
               ))}
               <span className="ml-auto text-[10px] font-mono text-[var(--text-muted)]">
-                ALT ~{ORBIT_ALT_KM} KM · ORBIT ~93 MIN · ESC TO CLOSE
+                {t('ALT')} ~{ORBIT_ALT_KM} KM · {t('ORBIT')} ~93 MIN · {t('ESC TO CLOSE')}
               </span>
             </div>
           </div>

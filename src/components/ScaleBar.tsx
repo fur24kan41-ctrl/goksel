@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useI18n } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    OSIRIS — Scale Bar
@@ -38,10 +39,11 @@ export function scaleFor(zoom: number, latitude: number): { barWidth: number; la
 }
 
 export default function ScaleBar({ zoom, latitude }: ScaleBarProps) {
+  const { t } = useI18n();
   const scaleInfo = useMemo(() => scaleFor(zoom, latitude), [zoom, latitude]);
 
   return (
-    <div className="flex items-center gap-1.5 pointer-events-none select-none" aria-label={`Approximate scale at map center: ${scaleInfo.label}`}>
+    <div className="flex items-center gap-1.5 pointer-events-none select-none" aria-label={`${t('Approximate scale at map center')}: ${scaleInfo.label}`}>
       <div className="flex flex-col items-start">
         {/* Scale line with ticks */}
         <div className="relative" style={{ width: scaleInfo.barWidth }}>

@@ -9,6 +9,7 @@ import {
   cumulativeDistances, stepPositions, computeProgress, shouldAnnounce, announcementText,
   type NavStep, type NavFix, type NavProgress,
 } from '@/lib/navigation';
+import { useI18n } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    OSIRIS — Live Navigation
@@ -65,6 +66,7 @@ export function navDuration(s: number): string {
 export default function NavigationView({
   route, destinationLabel, fix, onExit, onReroute, onProgress, following, onRecenter,
 }: NavigationViewProps) {
+  const { t } = useI18n();
   const [muted, setMuted] = useState(false);
   const [rerouting, setRerouting] = useState(false);
   // Coarse clock for the arrival time — reading Date.now() during render is
@@ -78,6 +80,8 @@ export default function NavigationView({
   const spoken = useRef<Record<number, number>>({});
   const offRouteSince = useRef<number | null>(null);
   const wakeLock = useRef<WakeLockSentinel | null>(null);
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
 
   // Derived once per route rather than on every position update. The parent
   // keys this component by route, so a recalculated route remounts it and the
@@ -116,7 +120,7 @@ export default function NavigationView({
     if (p.arrived) {
       if (!spoken.current[-1]) {
         spoken.current[-1] = 1;
-        speak('You have arrived at your destination.');
+        speak(tRef.current('You have arrived at your destination.'));
       }
       return;
     }
@@ -127,7 +131,7 @@ export default function NavigationView({
       if (offRouteSince.current === null) offRouteSince.current = Date.now();
       else if (Date.now() - offRouteSince.current > 6000 && !rerouting) {
         setRerouting(true);
-        speak('Recalculating.');
+        speak(tRef.current('Recalculating.'));
         onReroute({ lat: fix.lat, lng: fix.lng });
       }
       return;
@@ -182,11 +186,11 @@ export default function NavigationView({
           <div className="flex-1 min-w-0">
             {!arrived && progress && (
               <div className="text-[30px] leading-none font-mono font-light text-[var(--gold-light)] tabular-nums mb-1.5">
-                {navDistance(progress.distanceToStep)}
+                {t(navDistance(progress.distanceToStep))}
               </div>
             )}
             <div className={`text-[14px] leading-snug ${arrived ? 'text-[var(--gold-light)]' : 'text-[var(--text-heading)]'}`}>
-              {arrived ? `You have arrived at ${destinationLabel}` : step?.instruction ?? 'Starting…'}
+              {arrived ? `${t('You have arrived at')} ${destinationLabel}` : step?.instruction ?? t('Starting…')}
             </div>
           </div>
 
@@ -196,8 +200,8 @@ export default function NavigationView({
             {onRecenter && !following && (
               <button
                 onClick={onRecenter}
-                title="Recenter on me and resume follow"
-                aria-label="Recenter on me and resume follow"
+                title={t('Recenter on me and resume follow')}
+                aria-label={t('Recenter on me and resume follow')}
                 className="p-1.5 rounded-md text-[var(--gold-light)] bg-[rgba(var(--gold-rgb),0.14)] hover:bg-[rgba(var(--gold-rgb),0.24)] transition-colors animate-pulse"
               >
                 <LocateFixed className="w-4 h-4" />
@@ -206,15 +210,15 @@ export default function NavigationView({
             <button
               onClick={() => { setMuted((m) => !m); window.speechSynthesis?.cancel(); }}
               aria-pressed={muted}
-              title={muted ? 'Unmute voice guidance' : 'Mute voice guidance'}
+              title={muted ? t('Unmute voice guidance') : t('Mute voice guidance')}
               className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
               {muted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
             </button>
             <button
               onClick={onExit}
-              title="End navigation"
-              aria-label="End navigation"
+              title={t('End navigation')}
+              aria-label={t('End navigation')}
               className="p-1.5 rounded-md text-[var(--text-muted)] hover:text-[var(--alert-red)] transition-colors"
             >
               <X className="w-4 h-4" />
@@ -234,22 +238,22 @@ export default function NavigationView({
         <div className="px-4 py-2.5 flex items-center justify-between gap-3">
           {rerouting ? (
             <span className="flex items-center gap-2 text-[11px] text-[var(--alert-orange)]">
-              <Loader2 className="w-3 h-3 animate-spin" /> Recalculating route…
+              <Loader2 className="w-3 h-3 animate-spin" /> {t('Recalculating route…')}
             </span>
           ) : progress?.offRoute ? (
             <span className="flex items-center gap-2 text-[11px] text-[var(--alert-orange)]">
-              <AlertTriangle className="w-3 h-3" /> Off route
+              <AlertTriangle className="w-3 h-3" /> {t('Off route')}
             </span>
           ) : (
             <span className="text-[12px] text-[var(--text-secondary)] truncate">
-              to {destinationLabel}
+              {t('to')} {destinationLabel}
             </span>
           )}
 
           {progress && !arrived && (
             <span className="flex items-baseline gap-2.5 flex-shrink-0 tabular-nums">
               <span className="text-[14px] font-mono text-[var(--text-heading)]">{navDuration(progress.durationRemaining)}</span>
-              <span className="text-[12px] font-mono text-[var(--text-secondary)]">{navDistance(progress.distanceRemaining)}</span>
+              <span className="text-[12px] font-mono text-[var(--text-secondary)]">{t(navDistance(progress.distanceRemaining))}</span>
               <span className="text-[12px] font-mono text-[var(--text-muted)]">
                 {new Date(now + progress.durationRemaining * 1000)
                   .toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -262,7 +266,7 @@ export default function NavigationView({
       {/* ── the turn after this one ── */}
       {progress && !arrived && route.steps[progress.stepIndex + 1] && (
         <div className="glass-panel tool-glass px-4 py-2.5 flex items-center gap-3">
-          <span className="text-[9.5px] font-mono uppercase tracking-[0.14em] text-[var(--text-muted)] flex-shrink-0">Then</span>
+          <span className="text-[9.5px] font-mono uppercase tracking-[0.14em] text-[var(--text-muted)] flex-shrink-0">{t('Then')}</span>
           <ManeuverIcon type={route.steps[progress.stepIndex + 1].type} className="w-4 h-4" />
           <span className="text-[12px] text-[var(--text-secondary)] truncate">
             {route.steps[progress.stepIndex + 1].instruction}
@@ -273,7 +277,7 @@ export default function NavigationView({
       {!fix && (
         <div className="glass-panel tool-glass px-4 py-2.5 flex items-center gap-2 text-[12px] text-[var(--gold-light)]">
           <Loader2 className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
-          Waiting for a position fix… navigation needs HTTPS or localhost.
+          {t('Waiting for a position fix… navigation needs HTTPS or localhost.')}
         </div>
       )}
     </div>

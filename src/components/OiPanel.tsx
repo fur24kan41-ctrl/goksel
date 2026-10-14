@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowRight, History, Maximize2, Plus, X } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 import { PROVIDERS, providerInfo } from '@/lib/oi/providers';
 import { loadEngine, loadKey, type Engine, type OiClient } from '@/lib/oi/client';
 import { resolve } from '@/lib/oi/research';
@@ -80,6 +81,7 @@ function initialEngine(): Engine {
 }
 
 export default function OiPanel(props: OiPanelProps) {
+  const { t } = useI18n();
   const { oi, selected, onSelect, embedded = false, theater = false } = props;
   // Settings come from this browser's storage. The panel only renders once opened, on the client.
   const [engine, setEngine] = useState<Engine>(initialEngine);
@@ -109,7 +111,7 @@ export default function OiPanel(props: OiPanelProps) {
   const errorBox = oi.error ? (
     <div role="alert" className="mx-4 mt-3 rounded-md pl-3 pr-2 py-2 text-[11.5px] leading-snug flex items-start gap-2 border-l-2" style={{ color: T.text, background: 'rgba(255,61,61,0.06)', borderColor: T.red }}>
       <span className="flex-1">{oi.error}</span>
-      <button onClick={() => oi.setError('')} className="text-[var(--text-secondary)] hover:text-[var(--text-heading)]" aria-label="Dismiss"><X className="w-3.5 h-3.5" /></button>
+      <button onClick={() => oi.setError('')} className="text-[var(--text-secondary)] hover:text-[var(--text-heading)]" aria-label={t('Dismiss')}><X className="w-3.5 h-3.5" /></button>
     </div>
   ) : null;
 
@@ -177,10 +179,10 @@ export default function OiPanel(props: OiPanelProps) {
       {!embedded && <span className="hud-text text-[12px] text-[var(--text-heading)]">OI</span>}
       <div className="ml-auto flex items-center gap-0.5">
         <EnginePill engine={engine} ready={ready} open={engineOpen} onClick={() => setEngineOpen(v => !v)} assist={assisting} />
-        {!assisting && <IconButton title={showHistory ? 'Back' : 'Your predictions'} onClick={() => setShowHistory(v => !v)} active={showHistory}><History className="w-3.5 h-3.5" /></IconButton>}
-        {!assisting && s && <IconButton title="New prediction" onClick={reset}><Plus className="w-3.5 h-3.5" /></IconButton>}
-        {!embedded && props.onTheater && <IconButton title="Full screen: the OI workspace" onClick={() => props.onTheater?.(true)}><Maximize2 className="w-3.5 h-3.5" /></IconButton>}
-        {props.onClose && !embedded && <IconButton title="Close (the run keeps going)" onClick={props.onClose}><X className="w-3.5 h-3.5" /></IconButton>}
+        {!assisting && <IconButton title={showHistory ? t('Back') : t('Your predictions')} onClick={() => setShowHistory(v => !v)} active={showHistory}><History className="w-3.5 h-3.5" /></IconButton>}
+        {!assisting && s && <IconButton title={t('New prediction')} onClick={reset}><Plus className="w-3.5 h-3.5" /></IconButton>}
+        {!embedded && props.onTheater && <IconButton title={t('Full screen: the OI workspace')} onClick={() => props.onTheater?.(true)}><Maximize2 className="w-3.5 h-3.5" /></IconButton>}
+        {props.onClose && !embedded && <IconButton title={t('Close (the run keeps going)')} onClick={props.onClose}><X className="w-3.5 h-3.5" /></IconButton>}
       </div>
     </header>
   );
@@ -226,8 +228,8 @@ export default function OiPanel(props: OiPanelProps) {
                 className="group -mt-1 flex items-center gap-3 w-full rounded-lg border border-[var(--border-secondary)] bg-white/[0.015] px-3 py-2.5 text-left transition-colors hover:border-[var(--border-active)] hover:bg-[var(--hover-accent)]">
                 <Maximize2 className="w-4 h-4 flex-shrink-0 text-[var(--gold-primary)]" />
                 <span className="flex-1 min-w-0">
-                  <span className="block text-[12px] font-medium text-[var(--text-heading)]">Open the workspace</span>
-                  <span className="block text-[10.5px] text-[var(--text-muted)] truncate">The research graph, every world on a timeline, every object in tables</span>
+                  <span className="block text-[12px] font-medium text-[var(--text-heading)]">{t('Open the workspace')}</span>
+                  <span className="block text-[10.5px] text-[var(--text-muted)] truncate">{t('The research graph, every world on a timeline, every object in tables')}</span>
                 </span>
                 <ArrowRight className="w-3.5 h-3.5 flex-shrink-0 text-[var(--text-muted)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--gold-light)]" />
               </button>

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { Loader2, Navigation, Route, Search, SearchX, X } from 'lucide-react';
 import { forgetRecent, loadRecent, rememberPlace, type RecentPlace } from '@/lib/recent-places';
 import { Key, PlaceRow, type PlaceLike } from './places';
+import { useI18n } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    OSIRIS — Search
@@ -53,6 +54,7 @@ const parseCoords = (s: string): { lat: number; lng: number } | null => {
 };
 
 export default function SearchBar({ onLocate, center = null, onClose, onDirections, embedded = false }: SearchBarProps) {
+  const { t } = useI18n();
   const [value, setValue] = useState('');
   const [results, setResults] = useState<Hit[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,6 +69,10 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
   const abortRef = useRef<AbortController | null>(null);
   const boxRef = useRef<HTMLDivElement>(null);
   const listId = useId();
+  // Memoized callbacks below run long after render, so they read the live
+  // translation through a ref instead of freezing the closure on one language.
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
 
   useEffect(() => { const t = setTimeout(() => inputRef.current?.focus(), 50); return () => clearTimeout(t); }, []);
 
@@ -97,7 +103,7 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
   }, [onClose, embedded]);
 
   const typing = value.trim().length > 0;
-  const you: Hit = { label: 'Your location', context: locateNote || 'Fly to where you are', lat: 0, lng: 0, kind: 'current', zoom: 14 };
+  const you: Hit = { label: t('Your location'), context: locateNote || t('Fly to where you are'), lat: 0, lng: 0, kind: 'current', zoom: 14 };
   const items: Hit[] = typing ? results : [you, ...recent.map(r => ({ ...r, zoom: ZOOM_BY_KIND[r.kind ?? ''] ?? 13 }))];
   const active = Math.min(selected, Math.max(0, items.length - 1));
 
@@ -110,7 +116,7 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
     if (coords) {
       abortRef.current?.abort();
       setLoading(false);
-      setResults([{ label: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`, context: 'Coordinates', ...coords, kind: 'coordinate', zoom: 15 }]);
+      setResults([{ label: `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`, context: tRef.current('Coordinates'), ...coords, kind: 'coordinate', zoom: 15 }]);
       setAnswered(q);
       return;
     }
@@ -168,7 +174,7 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
         return;
       }
     } catch { /* fall through to the note */ }
-    setLocateNote('Location unavailable: allow it in the browser, or search instead');
+    setLocateNote(tRef.current('Location unavailable: allow it in the browser, or search instead'));
     setLocating(false);
   }, [onLocate, onClose]);
 
@@ -217,8 +223,8 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
           value={value}
           onChange={e => search(e.target.value)}
           onKeyDown={onKeyDown}
-          placeholder="Search places, addresses or coordinates"
-          aria-label="Search places"
+          placeholder={t('Search places, addresses or coordinates')}
+          aria-label={t('Search places')}
           role="combobox"
           aria-expanded={items.length > 0}
           aria-controls={listId}
@@ -227,9 +233,9 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
           autoComplete="off"
           spellCheck={false}
         />
-        {loading && <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-[var(--gold-primary)]" aria-label="Searching" />}
+        {loading && <Loader2 className="w-4 h-4 flex-shrink-0 animate-spin text-[var(--gold-primary)]" aria-label={t('Searching')} />}
         {value ? (
-          <button onClick={() => { search(''); inputRef.current?.focus(); }} aria-label="Clear the search"
+          <button onClick={() => { search(''); inputRef.current?.focus(); }} aria-label={t('Clear the search')}
             className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-heading)] hover:bg-white/[0.06] transition-colors">
             <X className="w-4 h-4" />
           </button>
@@ -244,10 +250,10 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
       <div className={`min-h-0 overflow-y-auto styled-scrollbar ${embedded ? 'pt-3' : 'p-2'}`}>
         {!typing && (
           <span className={`block px-3 pt-1 pb-1.5 text-[10px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)] ${embedded ? 'px-1' : ''}`}>
-            {recent.length ? 'Jump to' : 'Start here'}
+            {recent.length ? t('Jump to') : t('Start here')}
           </span>
         )}
-        <div id={listId} role="listbox" aria-label={typing ? 'Places found' : 'Suggestions'} className="flex flex-col gap-0.5">
+        <div id={listId} role="listbox" aria-label={typing ? t('Places found') : t('Suggestions')} className="flex flex-col gap-0.5">
           {items.map((h, i) => (
             <PlaceRow key={`${h.kind}-${h.label}-${h.lat}-${i}`} id={`${listId}-${i}`} place={h} query={typing ? value : ''} on={i === active}
               onPick={() => go(h)} onHover={() => setSelected(i)} from={center}
@@ -255,7 +261,7 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
               trailing={h.kind === 'current'
                 ? (locating ? <Loader2 className="w-4 h-4 mr-2 animate-spin text-[var(--gold-primary)]" /> : undefined)
                 : onDirections && (
-                  <button onClick={() => directions(h)} aria-label={`Directions to ${h.label}`} title="Directions (Shift+Enter)"
+                  <button onClick={() => directions(h)} aria-label={`${t('Directions to')} ${h.label}`} title={t('Directions (Shift+Enter)')}
                     className={`w-8 h-8 rounded-full flex items-center justify-center border transition-all ${i === active ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus:opacity-100'} border-[rgba(var(--gold-rgb),0.35)] text-[var(--gold-light)] bg-[rgba(var(--gold-rgb),0.06)] hover:bg-[rgba(var(--gold-rgb),0.16)]`}>
                     <Route className="w-4 h-4" />
                   </button>
@@ -266,17 +272,17 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
         {!typing && recent.length > 0 && (
           <button onClick={() => { forgetRecent(); setRecent([]); setSelected(0); }}
             className="mt-1 ml-3 text-[10.5px] text-[var(--text-muted)] hover:text-[var(--text-heading)] transition-colors">
-            Clear recent places
+            {t('Clear recent places')}
           </button>
         )}
 
         {!typing && (
           <div className={`mt-3 mb-1 flex flex-wrap items-center gap-1.5 ${embedded ? '' : 'px-3'}`}>
-            <span className="text-[10px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)] mr-1">Try</span>
-            {TRY.map(t => (
-              <button key={t} onClick={() => { search(t); inputRef.current?.focus(); }}
+            <span className="text-[10px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)] mr-1">{t('Try')}</span>
+            {TRY.map(example => (
+              <button key={example} onClick={() => { search(example); inputRef.current?.focus(); }}
                 className="h-7 px-2.5 rounded-full border border-[var(--border-secondary)] bg-white/[0.02] text-[11px] text-[var(--text-secondary)] hover:text-[var(--text-heading)] hover:border-[var(--border-primary)] transition-colors">
-                {t}
+                {t(example)}
               </button>
             ))}
           </div>
@@ -287,9 +293,9 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
             <span className="w-11 h-11 rounded-full flex items-center justify-center border border-[var(--border-secondary)] bg-white/[0.02]">
               <SearchX className="w-5 h-5 text-[var(--text-muted)]" />
             </span>
-            <p className="mt-3 text-[13px] text-[var(--text-heading)]">No places match “{value.trim()}”</p>
+            <p className="mt-3 text-[13px] text-[var(--text-heading)]">{t('No places match')} “{value.trim()}”</p>
             <p className="mt-1 max-w-[320px] text-[11.5px] leading-relaxed text-[var(--text-muted)]">
-              Try a city, a street, a landmark, or coordinates such as 48.8584, 2.2945.
+              {t('Try a city, a street, a landmark, or coordinates such as 48.8584, 2.2945.')}
             </p>
           </div>
         )}
@@ -313,14 +319,14 @@ export default function SearchBar({ onLocate, center = null, onClose, onDirectio
       <div className={`flex items-center gap-3 flex-shrink-0 text-[10px] text-[var(--text-muted)] ${embedded ? 'pt-2' : 'px-4 h-9 border-t border-[var(--border-secondary)]'}`}>
         {!embedded && (
           <span className="hidden md:flex items-center gap-2.5">
-            <span className="flex items-center gap-1"><Key>↑</Key><Key>↓</Key> move</span>
-            <span className="flex items-center gap-1"><Key>↵</Key> go</span>
-            {onDirections && <span className="flex items-center gap-1"><Key>⇧</Key><Key>↵</Key><Navigation className="w-3 h-3" /> route</span>}
-            <span className="flex items-center gap-1"><Key>Esc</Key> close</span>
+            <span className="flex items-center gap-1"><Key>↑</Key><Key>↓</Key> {t('move')}</span>
+            <span className="flex items-center gap-1"><Key>↵</Key> {t('go')}</span>
+            {onDirections && <span className="flex items-center gap-1"><Key>⇧</Key><Key>↵</Key><Navigation className="w-3 h-3" /> {t('route')}</span>}
+            <span className="flex items-center gap-1"><Key>Esc</Key> {t('close')}</span>
           </span>
         )}
         <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="ml-auto hover:text-[var(--gold-light)] transition-colors">
-          © OpenStreetMap
+          {t('© OpenStreetMap')}
         </a>
       </div>
     </div>

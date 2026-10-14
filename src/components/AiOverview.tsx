@@ -219,7 +219,7 @@ export default function AiOverview({
               {/* Header row */}
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-mono tracking-widest text-[9px]" style={{ color: accent }}>
-                  {result ? `OSIRIS ${result.generatedBy === 'gemini' ? 'AI' : 'ANALYST'}` : 'OSIRIS ANALYST'}
+                  {result ? `GÖKSEL ${result.generatedBy === 'gemini' ? 'AI' : 'ANALYST'}` : 'GÖKSEL ANALYST'}
                   {result && <span className="text-[var(--text-muted)]"> · {timeAgo(result.generatedAt).toUpperCase()}</span>}
                 </span>
                 <div className="flex items-center gap-2">

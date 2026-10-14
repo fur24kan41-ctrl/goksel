@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { X, Plane, Gauge, ArrowUp, Radio, Crosshair, Loader2 } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    OSIRIS — Flight Watch
@@ -152,6 +153,7 @@ function Row({ flight, telem, onRemove, onLocate, onDetail }: {
   onLocate: (lat: number, lng: number) => void;
   onDetail: (icao24: string, d: AircraftDetail | null) => void;
 }) {
+  const { t } = useI18n();
   const [detail, setDetail] = useState<AircraftDetail | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -196,7 +198,7 @@ function Row({ flight, telem, onRemove, onLocate, onDetail }: {
         {telem && (
           <button
             onClick={() => onLocate(telem.lat, telem.lng)}
-            title="Centre on this aircraft"
+            title={t('Centre on this aircraft')}
             className="p-0.5 text-[var(--text-muted)] hover:text-[var(--cyan-primary)] transition-colors"
           >
             <Crosshair className="w-3 h-3" />
@@ -204,8 +206,8 @@ function Row({ flight, telem, onRemove, onLocate, onDetail }: {
         )}
         <button
           onClick={() => onRemove(flight.icao24)}
-          title="Stop watching"
-          aria-label={`Stop watching ${flight.callsign || flight.icao24}`}
+          title={t('Stop watching')}
+          aria-label={`${t('Stop watching')} ${flight.callsign || flight.icao24}`}
           className="p-0.5 text-[var(--text-muted)] hover:text-[var(--alert-red)] transition-colors"
         >
           <X className="w-3 h-3" />
@@ -215,12 +217,12 @@ function Row({ flight, telem, onRemove, onLocate, onDetail }: {
       <div className="px-2.5 py-2">
         {loading ? (
           <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-muted)]">
-            <Loader2 className="w-3 h-3 animate-spin" /> Identifying airframe…
+            <Loader2 className="w-3 h-3 animate-spin" /> {t('Identifying airframe…')}
           </div>
         ) : (
           <>
             <div className="text-[11px] text-[var(--text-primary)] leading-snug">
-              {detail?.model || 'Unidentified type'}
+              {detail?.model || t('Unidentified type')}
             </div>
             <div className="flex flex-wrap gap-x-2.5 gap-y-0.5 mt-0.5 text-[9px] text-[var(--text-muted)]">
               {detail?.registration && <span className="tabular-nums">{detail.registration}</span>}
@@ -234,7 +236,7 @@ function Row({ flight, telem, onRemove, onLocate, onDetail }: {
           <div className="flex items-center gap-1">
             <ArrowUp className="w-2.5 h-2.5 text-[var(--text-muted)] flex-shrink-0" />
             <span className="text-[10px] text-[var(--text-secondary)] tabular-nums truncate">
-              {formatAlt(telem?.alt, telem?.grounded)}
+              {t(formatAlt(telem?.alt, telem?.grounded))}
             </span>
           </div>
           <div className="flex items-center gap-1">
@@ -263,19 +265,19 @@ function Row({ flight, telem, onRemove, onLocate, onDetail }: {
             {/* An unconfirmed destination is a schedule claim, not something the
                 aircraft was seen to do — say so rather than imply certainty. */}
             <span className="text-[9px] text-[var(--text-muted)] ml-auto">
-              {detail.arrival ? 'landed' : detail.destination ? 'scheduled' : 'destination unknown'}
+              {detail.arrival ? t('landed') : detail.destination ? t('scheduled') : t('destination unknown')}
             </span>
           </div>
         )}
 
         {detail && detail.points > 0 && (
           <div className="mt-1.5 text-[9px] text-[var(--text-muted)] tabular-nums">
-            {detail.points} points this leg
+            {detail.points} {t('points this leg')}
           </div>
         )}
         {!telem && (
           <div className="mt-1.5 text-[9px] text-[var(--alert-orange)]">
-            No longer in the live feed
+            {t('No longer in the live feed')}
           </div>
         )}
       </div>

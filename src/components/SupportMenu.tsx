@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown, Coffee, ShoppingBag } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
 
 /*
  * One SUPPORT button in place of two pills. Ko-fi and the merch store used to
@@ -27,6 +28,7 @@ const OPTIONS = [
 ] as const;
 
 export default function SupportMenu({ compact = false }: { compact?: boolean }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -67,7 +69,7 @@ export default function SupportMenu({ compact = false }: { compact?: boolean }) 
         }`}
       >
         <div className={`${compact ? 'w-1 h-1' : 'w-1.5 h-1.5'} rounded-full bg-[var(--gold-primary)] animate-osiris-pulse`} />
-        <span className="text-[var(--gold-primary)] font-bold">SUPPORT</span>
+        <span className="text-[var(--gold-primary)] font-bold">{t('SUPPORT')}</span>
         <ChevronDown
           className={`w-2.5 h-2.5 text-[var(--gold-primary)] transition-transform ${open ? 'rotate-180' : ''}`}
           aria-hidden
@@ -97,8 +99,10 @@ export default function SupportMenu({ compact = false }: { compact?: boolean }) 
               >
                 <Icon className="w-3.5 h-3.5 shrink-0" style={{ color }} aria-hidden />
                 <span className="flex flex-col min-w-0">
-                  <span className="text-[10px] font-mono font-bold tracking-widest" style={{ color }}>{label}</span>
-                  <span className="text-[9px] font-mono text-[var(--text-muted)] truncate">{detail}</span>
+                  <span className="text-[10px] font-mono font-bold tracking-widest" style={{ color }}>{t(label)}</span>
+                  {/* A detail that is a bare URL has no translation entry, so
+                      t() hands it straight back untouched. */}
+                  <span className="text-[9px] font-mono text-[var(--text-muted)] truncate">{t(detail)}</span>
                 </span>
               </a>
             ))}

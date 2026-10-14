@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { loadRecent, rememberPlace, type RecentPlace } from '@/lib/recent-places';
 import { PlaceRow } from './places';
+import { useI18n } from '@/lib/i18n';
 
 /* ═══════════════════════════════════════════════════════════════
    OSIRIS — Directions
@@ -298,6 +299,9 @@ function PlaceInput({
   recent: RecentPlace[];
   trailing?: ReactNode;
 }) {
+  const { t } = useI18n();
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
   const [results, setResults] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
   const [open, setOpen] = useState(false);
@@ -324,7 +328,7 @@ function PlaceInput({
       const lat = parseFloat(coord[1]);
       const lng = parseFloat(coord[2]);
       if (lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180) {
-        setResults([{ label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng, kind: 'coordinate', context: 'Coordinates' }]);
+        setResults([{ label: `${lat.toFixed(5)}, ${lng.toFixed(5)}`, lat, lng, kind: 'coordinate', context: tRef.current('Coordinates') }]);
         setOpen(true);
         return;
       }
@@ -369,7 +373,7 @@ function PlaceInput({
 
   // What the list offers: where you are (when tracked), then what was typed for, or recent places while the field is empty.
   const empty = value.trim().length < 2;
-  const you: Place[] = liveFix ? [{ label: 'Your location', lat: liveFix.lat, lng: liveFix.lng, kind: 'current', context: 'Live position' }] : [];
+  const you: Place[] = liveFix ? [{ label: t('Your location'), lat: liveFix.lat, lng: liveFix.lng, kind: 'current', context: t('Live position') }] : [];
   const options: Array<Place & { recent?: boolean }> = [...you, ...(empty ? recent.map(r => ({ ...r, recent: true })) : results)];
   const at = Math.min(idx, Math.max(0, options.length - 1));
   const center = biasLat !== undefined && biasLng !== undefined ? { lat: biasLat, lng: biasLng } : null;
@@ -400,13 +404,13 @@ function PlaceInput({
         />
         {loading && <Loader2 className="w-3.5 h-3.5 mx-1 flex-shrink-0 animate-spin text-[var(--gold-primary)]" />}
         {value && onClear && (
-          <button type="button" onClick={() => { onClear(); setResults([]); }} aria-label={`Clear ${placeholder.toLowerCase()}`}
+          <button type="button" onClick={() => { onClear(); setResults([]); }} aria-label={`${t('Clear')} ${placeholder.toLowerCase()}`}
             className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--text-heading)] hover:bg-white/[0.06] transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
         )}
         {onLocate && (
-          <button type="button" onClick={onLocate} disabled={locating} title="Use my location" aria-label="Use my location"
+          <button type="button" onClick={onLocate} disabled={locating} title={t('Use my location')} aria-label={t('Use my location')}
             className="w-8 h-8 mr-0.5 rounded-md flex items-center justify-center flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--gold-light)] hover:bg-[rgba(var(--gold-rgb),0.08)] transition-colors disabled:opacity-60">
             <LocateFixed className={`w-4 h-4 ${locating ? 'animate-pulse text-[var(--gold-light)]' : ''}`} />
           </button>
@@ -415,10 +419,10 @@ function PlaceInput({
       </div>
 
       {open && options.length > 0 && (
-        <div role="listbox" aria-label={empty ? 'Suggestions' : 'Places found'}
+        <div role="listbox" aria-label={empty ? t('Suggestions') : t('Places found')}
           className="absolute top-full -left-[26px] -right-[42px] mt-1.5 z-[10000] rounded-xl border border-[var(--border-primary)] p-1.5 max-h-[280px] overflow-y-auto styled-scrollbar"
           style={{ background: 'var(--oi-solid)', boxShadow: '0 18px 44px rgba(0,0,0,0.75)' }}>
-          {empty && recent.length > 0 && <span className="block px-3 pt-1 pb-1 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">Recent</span>}
+          {empty && recent.length > 0 && <span className="block px-3 pt-1 pb-1 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">{t('Recent')}</span>}
           {options.map((r, i) => (
             <PlaceRow key={`${r.kind}-${r.label}-${r.lat}-${i}`} place={r} query={empty ? '' : value} on={i === at}
               onPick={() => choose(r)} onHover={() => setIdx(i)} from={center} kindOverride={r.recent ? 'recent' : undefined} />
@@ -442,6 +446,7 @@ function IconBtn({ children, label, onClick, on, className = '' }: { children: R
 }
 
 export default function DirectionsBar({ onRoute, onLocate, onClose, center = null, onLiveLocation, onActiveSegment, onFollowChange, onStartNavigation, initialTo = null }: DirectionsBarProps) {
+  const { t } = useI18n();
   const [fromText, setFromText] = useState('');
   const [toText, setToText] = useState(initialTo?.label ?? '');
   const [from, setFrom] = useState<Place | null>(null);
@@ -463,6 +468,8 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
   const [showOptions, setShowOptions] = useState(false);
   const [recent, setRecent] = useState<RecentPlace[]>(() => (typeof window === 'undefined' ? [] : loadRecent()));
   const watchId = useRef<number | null>(null);
+  const tRef = useRef(t);
+  useEffect(() => { tRef.current = t; }, [t]);
 
   /** Remember a place picked for the route, for the next time a field is empty. */
   const remember = (p: Place) => {
@@ -493,7 +500,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         setRoute(null);
         setRoutes([]);
         onRoute(null);
-        setError(data.error || 'No route found');
+        setError(tRef.current(data.error || 'No route found'));
       } else {
         const all: RouteResult[] = data.routes?.length ? data.routes : [data];
         setRoutes(all);
@@ -505,7 +512,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
       setRoute(null);
       setRoutes([]);
       onRoute(null);
-      setError('Routing service unreachable');
+      setError(tRef.current('Routing service unreachable'));
     }
     setLoading(false);
   }, [onRoute]);
@@ -530,7 +537,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
     }
 
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      setLocateError('This browser has no geolocation');
+      setLocateError(tRef.current('This browser has no geolocation'));
       return;
     }
 
@@ -548,7 +555,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         setTracking(true);
       },
       () => {
-        setLocateError('Location permission denied — needs HTTPS or localhost');
+        setLocateError(tRef.current('Location permission denied — needs HTTPS or localhost'));
         setTracking(false);
       },
       { enableHighAccuracy: true, maximumAge: 5000, timeout: 15000 },
@@ -590,7 +597,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
 
     if (browser) {
       const { latitude, longitude } = browser.coords;
-      apply(latitude, longitude, 'My location');
+      apply(latitude, longitude, tRef.current('My location'));
       setLocating(false);
       return;
     }
@@ -599,13 +606,13 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
       const res = await fetch('/api/geo');
       const d = await res.json();
       if (d?.lat && d?.lon) {
-        apply(d.lat, d.lon, d.city ? `Near ${d.city}` : 'Approximate location');
-        setLocateError('Approximate — from network location');
+        apply(d.lat, d.lon, d.city ? `${tRef.current('Near')} ${d.city}` : tRef.current('Approximate location'));
+        setLocateError(tRef.current('Approximate — from network location'));
       } else {
-        setLocateError('Could not determine your location');
+        setLocateError(tRef.current('Could not determine your location'));
       }
     } catch {
-      setLocateError('Could not determine your location');
+      setLocateError(tRef.current('Could not determine your location'));
     }
     setLocating(false);
   }, [to, mode, runRoute, onLocate, stops, avoid]);
@@ -690,23 +697,23 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
         <span className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(var(--gold-rgb),0.12)' }}>
           <Route className="w-4 h-4 text-[var(--gold-primary)]" />
         </span>
-        <h2 className="flex-1 text-[14px] font-semibold text-[var(--text-heading)]">Directions</h2>
+        <h2 className="flex-1 text-[14px] font-semibold text-[var(--text-heading)]">{t('Directions')}</h2>
         {tracking && (
           <span className="flex items-center gap-1.5 h-6 px-2 rounded-full text-[9.5px] font-mono tracking-[0.12em] uppercase text-[var(--gold-light)]"
             style={{ background: 'rgba(var(--gold-rgb),0.1)', boxShadow: 'inset 0 0 0 1px rgba(var(--gold-rgb),0.3)' }}>
-            <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold-light)] animate-osiris-pulse" /> Live
+            <span className="w-1.5 h-1.5 rounded-full bg-[var(--gold-light)] animate-osiris-pulse" /> {t('Live')}
           </span>
         )}
-        <IconBtn label={tracking ? 'Stop live tracking' : 'Track my location live'} onClick={toggleTracking} on={tracking}>
+        <IconBtn label={tracking ? t('Stop live tracking') : t('Track my location live')} onClick={toggleTracking} on={tracking}>
           <Crosshair className={`w-4 h-4 ${tracking ? 'animate-pulse' : ''}`} />
         </IconBtn>
         {tracking && (
-          <IconBtn label={follow ? 'Stop following' : 'Keep the map centred on me'} on={follow}
+          <IconBtn label={follow ? t('Stop following') : t('Keep the map centred on me')} on={follow}
             onClick={() => { const n = !follow; setFollow(n); onFollowChange?.(n); }}>
             <LocateFixed className="w-4 h-4" />
           </IconBtn>
         )}
-        {onClose && <IconBtn label="Close directions" onClick={onClose}><X className="w-4 h-4" /></IconBtn>}
+        {onClose && <IconBtn label={t('Close directions')} onClick={onClose}><X className="w-4 h-4" /></IconBtn>}
       </header>
 
       {/* ── start, stops, destination ── */}
@@ -715,7 +722,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
           <RailRow mark={<StartMark />}>
             <PlaceInput
               value={fromText} onChange={setFromText} onPick={pickFrom} onClear={() => clearEnd('from')}
-              placeholder="Choose a start" autoFocus={!initialTo} {...bias}
+              placeholder={t('Choose a start')} autoFocus={!initialTo} {...bias}
               onLocate={useMyLocation} locating={locating} liveFix={live} recent={recent}
             />
           </RailRow>
@@ -725,9 +732,9 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                 value={v.text}
                 onChange={(t) => setVias((prev) => prev.map((x, j) => (j === i ? { ...x, text: t } : x)))}
                 onPick={(p) => pickVia(i, p)}
-                placeholder={`Stop ${i + 1}`} {...bias} liveFix={live} recent={recent}
+                placeholder={`${t('Stop')} ${i + 1}`} {...bias} liveFix={live} recent={recent}
                 trailing={(
-                  <button type="button" onClick={() => removeVia(i)} aria-label={`Remove stop ${i + 1}`}
+                  <button type="button" onClick={() => removeVia(i)} aria-label={`${t('Remove stop')} ${i + 1}`}
                     className="w-8 h-8 mr-0.5 rounded-md flex items-center justify-center flex-shrink-0 text-[var(--text-muted)] hover:text-[var(--alert-red)] hover:bg-[rgba(255,61,61,0.08)] transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -738,11 +745,11 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
           <RailRow mark={<EndMark />} last>
             <PlaceInput
               value={toText} onChange={setToText} onPick={pickTo} onClear={() => clearEnd('to')}
-              placeholder="Choose a destination" {...bias} liveFix={live} recent={recent}
+              placeholder={t('Choose a destination')} {...bias} liveFix={live} recent={recent}
             />
           </RailRow>
         </div>
-        <button onClick={swap} aria-label="Swap start and destination" title="Swap start and destination"
+        <button onClick={swap} aria-label={t('Swap start and destination')} title={t('Swap start and destination')}
           className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 border border-[var(--border-secondary)] bg-black/40 text-[var(--text-secondary)] hover:text-[var(--gold-light)] hover:border-[var(--border-active)] transition-colors">
           <ArrowUpDown className="w-3.5 h-3.5" />
         </button>
@@ -751,17 +758,17 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
       <div className="px-3 pb-2.5 flex items-center gap-1 flex-shrink-0">
         <button onClick={() => setVias((v) => [...v, { place: null, text: '' }])}
           className="h-7 pl-1.5 pr-2.5 rounded-md flex items-center gap-1.5 text-[11.5px] text-[var(--text-secondary)] hover:text-[var(--gold-light)] hover:bg-white/[0.04] transition-colors">
-          <Plus className="w-3.5 h-3.5" /> Add stop
+          <Plus className="w-3.5 h-3.5" /> {t('Add stop')}
         </button>
         <button onClick={() => setShowOptions((o) => !o)} aria-expanded={showOptions}
           className={`ml-auto h-7 px-2.5 rounded-md flex items-center gap-1.5 text-[11.5px] transition-colors ${showOptions || avoiding ? 'text-[var(--gold-light)] bg-[rgba(var(--gold-rgb),0.08)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-heading)] hover:bg-white/[0.04]'}`}>
-          <SlidersHorizontal className="w-3.5 h-3.5" /> Options{avoiding ? ` · ${avoiding}` : ''}
+          <SlidersHorizontal className="w-3.5 h-3.5" /> {t('Options')}{avoiding ? ` · ${avoiding}` : ''}
         </button>
       </div>
 
       {/* ── how ── */}
       <div className="px-3 pb-3 flex-shrink-0">
-        <div role="tablist" aria-label="Travel mode" className="flex gap-[2px] p-[3px] rounded-lg border border-[var(--border-secondary)] bg-black/45">
+        <div role="tablist" aria-label={t('Travel mode')} className="flex gap-[2px] p-[3px] rounded-lg border border-[var(--border-secondary)] bg-black/45">
           {MODES.map(({ id, label, Icon }) => {
             const on = mode === id;
             return (
@@ -769,18 +776,18 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                 className={`relative flex-1 h-8 flex items-center justify-center gap-1.5 rounded-md text-[10.5px] font-mono tracking-[0.12em] uppercase transition-colors ${on ? 'text-[var(--gold-light)]' : 'text-[var(--text-secondary)] hover:text-[var(--text-heading)]'}`}
                 style={on ? { background: 'rgba(var(--gold-rgb),0.12)', boxShadow: 'inset 0 0 0 1px rgba(var(--gold-rgb),0.32)' } : undefined}>
                 <Icon className="w-3.5 h-3.5" />
-                {label}
+                {t(label)}
               </button>
             );
           })}
         </div>
         {showOptions && (
           <div className="mt-2 flex items-center gap-1.5">
-            <span className="text-[10px] font-mono tracking-[0.12em] uppercase text-[var(--text-muted)] mr-0.5">Avoid</span>
+            <span className="text-[10px] font-mono tracking-[0.12em] uppercase text-[var(--text-muted)] mr-0.5">{t('Avoid')}</span>
             {([['tolls', 'Tolls'], ['highways', 'Motorways'], ['ferries', 'Ferries']] as const).map(([k, word]) => (
               <button key={k} onClick={() => toggleAvoid(k)} aria-pressed={avoid[k]}
                 className={`flex-1 h-7 rounded-full border text-[11px] transition-colors ${avoid[k] ? 'border-[var(--border-active)] bg-[rgba(var(--gold-rgb),0.12)] text-[var(--gold-light)]' : 'border-[var(--border-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-heading)]'}`}>
-                {word}
+                {t(word)}
               </button>
             ))}
           </div>
@@ -811,14 +818,14 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
               <AlertTriangle className="w-4.5 h-4.5 text-[var(--alert-red)]" />
             </span>
             <p className="mt-2.5 text-[13px] text-[var(--text-heading)]">{error}</p>
-            <p className="mt-1 text-[11.5px] text-[var(--text-muted)]">Try a different point, or another way of travelling.</p>
+            <p className="mt-1 text-[11.5px] text-[var(--text-muted)]">{t('Try a different point, or another way of travelling.')}</p>
           </div>
         )}
 
         {!loading && !error && !route && (
           <div className="p-3 flex flex-col gap-3">
             {ready ? (
-              <p className="px-1 text-[12px] text-[var(--text-muted)]">Calculating…</p>
+              <p className="px-1 text-[12px] text-[var(--text-muted)]">{t('Calculating…')}</p>
             ) : (
               <>
                 {!from && (
@@ -828,15 +835,15 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                       {locating ? <Loader2 className="w-4 h-4 animate-spin text-[var(--gold-light)]" /> : <LocateFixed className="w-4 h-4 text-[var(--gold-light)]" />}
                     </span>
                     <span className="flex-1 min-w-0">
-                      <span className="block text-[13px] text-[var(--text-heading)]">Start from my location</span>
-                      <span className="block text-[11px] text-[var(--text-muted)]">{to ? `Then the route to ${to.label}` : 'Then choose where to go'}</span>
+                      <span className="block text-[13px] text-[var(--text-heading)]">{t('Start from my location')}</span>
+                      <span className="block text-[11px] text-[var(--text-muted)]">{to ? `${t('Then the route to')} ${to.label}` : t('Then choose where to go')}</span>
                     </span>
                   </button>
                 )}
                 {locateError && <p className="px-1 text-[11px] text-[var(--gold-light)]">{locateError}</p>}
                 {recent.length > 0 && (
                   <div>
-                    <span className="block px-1 pb-1 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">Recent places</span>
+                    <span className="block px-1 pb-1 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">{t('Recent places')}</span>
                     <div className="flex flex-col gap-0.5">
                       {recent.slice(0, 4).map((r, i) => (
                         <PlaceRow key={`${r.label}-${r.lat}-${i}`} place={r} on={false} onPick={() => pickRecent(r)} from={center} kindOverride="recent" />
@@ -845,10 +852,10 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                   </div>
                 )}
                 <div className="px-1 flex flex-wrap items-center gap-1.5">
-                  <span className="text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)] mr-0.5">Try</span>
-                  <span className="instrument-sample">Heathrow</span>
-                  <span className="instrument-sample">10 Downing St</span>
-                  <span className="instrument-sample">51.5074, -0.1278</span>
+                  <span className="text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)] mr-0.5">{t('Try')}</span>
+                  <span className="instrument-sample">{t('Heathrow')}</span>
+                  <span className="instrument-sample">{t('10 Downing St')}</span>
+                  <span className="instrument-sample">{t('51.5074, -0.1278')}</span>
                 </div>
               </>
             )}
@@ -861,7 +868,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
               <div className="mx-3 mt-3 rounded-lg border px-3 py-2.5" style={{ borderColor: 'rgba(var(--gold-rgb),0.3)', background: 'rgba(var(--gold-rgb),0.06)' }}>
                 <div className="flex items-center gap-1.5 mb-2">
                   <Navigation className="w-3 h-3 text-[var(--gold-light)]" />
-                  <span className="text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--gold-light)]">Next</span>
+                  <span className="text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--gold-light)]">{t('Next')}</span>
                 </div>
                 <div className="flex items-center gap-3">
                   <StepIcon type={guidance.step.type} on />
@@ -879,36 +886,36 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                     <span className="text-[26px] leading-none font-mono font-light tabular-nums text-[var(--text-heading)]" style={{ textShadow: '0 0 20px rgba(var(--gold-rgb),0.2)' }}>
                       {formatDuration(route.duration)}
                     </span>
-                    {chosen === 0 && routes.length > 1 && <span className="text-[9.5px] font-mono tracking-[0.12em] uppercase text-[var(--gold-light)]">Fastest</span>}
+                    {chosen === 0 && routes.length > 1 && <span className="text-[9.5px] font-mono tracking-[0.12em] uppercase text-[var(--gold-light)]">{t('Fastest')}</span>}
                   </div>
                   <div className="mt-1.5 flex items-center gap-1.5 text-[11.5px] text-[var(--text-secondary)] tabular-nums">
                     <span>{formatDistance(route.distance)}</span>
                     <span className="text-[var(--text-muted)]">·</span>
                     <Clock className="w-3 h-3 text-[var(--text-muted)]" />
-                    <span>Arrive {arrivalTime(route.duration)}</span>
+                    <span>{t('Arrive')} {arrivalTime(route.duration)}</span>
                   </div>
-                  {via && <div className="mt-0.5 text-[11.5px] text-[var(--text-muted)] truncate">via {via}</div>}
+                  {via && <div className="mt-0.5 text-[11.5px] text-[var(--text-muted)] truncate">{t('Via')} {via}</div>}
                 </div>
                 {(route.hasToll || route.hasHighway || route.hasFerry) && (
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
-                    {route.hasToll && <span className="h-5 px-1.5 rounded flex items-center text-[9px] font-mono tracking-[0.1em] uppercase border border-[rgba(var(--gold-rgb),0.35)] text-[var(--gold-light)]">Toll</span>}
-                    {route.hasHighway && <span className="h-5 px-1.5 rounded flex items-center text-[9px] font-mono tracking-[0.1em] uppercase border border-[var(--border-secondary)] text-[var(--text-secondary)]">Motorway</span>}
-                    {route.hasFerry && <span className="h-5 px-1.5 rounded flex items-center text-[9px] font-mono tracking-[0.1em] uppercase border border-[var(--border-secondary)] text-[var(--text-secondary)]">Ferry</span>}
+                    {route.hasToll && <span className="h-5 px-1.5 rounded flex items-center text-[9px] font-mono tracking-[0.1em] uppercase border border-[rgba(var(--gold-rgb),0.35)] text-[var(--gold-light)]">{t('Toll')}</span>}
+                    {route.hasHighway && <span className="h-5 px-1.5 rounded flex items-center text-[9px] font-mono tracking-[0.1em] uppercase border border-[var(--border-secondary)] text-[var(--text-secondary)]">{t('Motorway')}</span>}
+                    {route.hasFerry && <span className="h-5 px-1.5 rounded flex items-center text-[9px] font-mono tracking-[0.1em] uppercase border border-[var(--border-secondary)] text-[var(--text-secondary)]">{t('Ferry')}</span>}
                   </div>
                 )}
               </div>
 
               {onStartNavigation && (
-                <button onClick={() => onStartNavigation(route, to?.label || 'your destination')} className="tool-btn-primary w-full mt-3">
-                  <Play className="w-4 h-4" fill="currentColor" /> Start navigation
+                <button onClick={() => onStartNavigation(route, to?.label || t('your destination'))} className="tool-btn-primary w-full mt-3">
+                  <Play className="w-4 h-4" fill="currentColor" /> {t('Start navigation')}
                 </button>
               )}
             </div>
 
             {routes.length > 1 && (
               <div className="px-3 pt-3">
-                <span className="block px-1 pb-1.5 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">Routes · {routes.length}</span>
-                <div role="radiogroup" aria-label="Routes" className="flex flex-col gap-1">
+                <span className="block px-1 pb-1.5 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">{t('Routes')} · {routes.length}</span>
+                <div role="radiogroup" aria-label={t('Routes')} className="flex flex-col gap-1">
                   {routes.map((r, i) => {
                     const on = i === chosen;
                     // Compared in the whole minutes shown, so "14 min" beside "13 min" never reads "same time".
@@ -922,11 +929,11 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
                         </span>
                         <span className="flex-1 min-w-0">
                           <span className={`block text-[12.5px] font-mono tabular-nums ${on ? 'text-[var(--gold-light)]' : 'text-[var(--text-heading)]'}`}>{formatDuration(r.duration)}</span>
-                          <span className="block text-[11px] text-[var(--text-muted)] truncate">{road ? `via ${road}` : formatDistance(r.distance)}</span>
+                          <span className="block text-[11px] text-[var(--text-muted)] truncate">{road ? `${t('Via')} ${road}` : formatDistance(r.distance)}</span>
                         </span>
                         <span className="flex flex-col items-end flex-shrink-0 text-[10.5px] font-mono tabular-nums">
                           <span className="text-[var(--text-secondary)]">{formatDistance(r.distance)}</span>
-                          <span className={i === 0 ? 'text-[var(--gold-light)]' : 'text-[var(--text-muted)]'}>{i === 0 ? 'Fastest' : slower > 0 ? `+${slower} min` : 'Same time'}</span>
+                          <span className={i === 0 ? 'text-[var(--gold-light)]' : 'text-[var(--text-muted)]'}>{i === 0 ? t('Fastest') : slower > 0 ? `+${slower} min` : t('Same time')}</span>
                         </span>
                       </button>
                     );
@@ -939,7 +946,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
               <div className="px-4 pt-3">
                 <div className="flex items-center justify-between mb-1">
                   <span className="flex items-center gap-1.5 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">
-                    <Mountain className="w-3 h-3" /> Elevation
+                    <Mountain className="w-3 h-3" /> {t('Elevation')}
                   </span>
                   <span className="text-[10.5px] font-mono text-[var(--text-secondary)] tabular-nums">↑{route.ascent ?? 0} m · ↓{route.descent ?? 0} m</span>
                 </div>
@@ -952,7 +959,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
 
             {/* steps */}
             <div className="px-3 pt-3 pb-2">
-              <span className="block px-1 pb-1.5 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">Turn by turn · {route.steps.length}</span>
+              <span className="block px-1 pb-1.5 text-[9.5px] font-mono tracking-[0.14em] uppercase text-[var(--text-muted)]">{t('Turn by turn')} · {route.steps.length}</span>
               <ol className="flex flex-col gap-0.5">
                 {route.steps.map((s, i) => {
                   const on = activeStep === i;
@@ -979,7 +986,7 @@ export default function DirectionsBar({ onRoute, onLocate, onClose, center = nul
             </div>
 
             <p className="px-4 py-2.5 flex items-center gap-1.5 text-[10px] text-[var(--text-muted)] border-t border-[var(--border-secondary)]">
-              Routing by {route.provider} ·{' '}
+              {t('Routing by')} {route.provider} ·{' '}
               <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer" className="hover:text-[var(--gold-light)]">© OpenStreetMap</a>
             </p>
           </>

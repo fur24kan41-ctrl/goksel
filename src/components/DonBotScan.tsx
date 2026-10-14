@@ -99,7 +99,7 @@ export default function DonBotScan({ initial = null, onScan }: {
             <ShieldCheck className="w-3 h-3 mt-px shrink-0" style={{ color: ACCENT }} />
             <span>
               Nothing loads until you analyse a token. DonBot then runs sealed in its own frame: none of its
-              code runs on OSIRIS, and it isn&apos;t told which site you&apos;re on.
+              code runs on GÖKSEL, and it isn&apos;t told which site you&apos;re on.
             </span>
           </div>
         </div>
